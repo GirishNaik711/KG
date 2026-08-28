@@ -1,0 +1,308 @@
+id: financial-services/commercial-banking/commercial-client-onboarding
+parent_id: financial-services/commercial-banking
+level: 3
+name: "Commercial Client Onboarding"
+description: >
+  End-to-end onboarding of commercial (non-retail) clients at a bank or
+  financial institution: legal entity verification, KYB / KYC / AML due
+  diligence, beneficial ownership discovery, sanctions and adverse-media
+  screening, risk rating, account and product setup, and credential
+  provisioning. This process typically spans multiple systems (core banking,
+  CRM, screening providers, corporate registries) and requires durable
+  audit trails for regulatory examination.
+
+typical_horizontals:
+  - ai-applications
+  - ai-infra-platforms
+
+keywords:
+  strong:
+    - "commercial onboarding"
+    - "commercial client onboarding"
+    - "kyb"
+    - "entity verification"
+    - "beneficial owner"
+    - "ubo"
+    - "corporate onboarding"
+  moderate:
+    - "client onboarding"
+    - "corporate account"
+    - "due diligence"
+    - "aml"
+    - "sanctions screening"
+    - "adverse media"
+    - "onboarding workflow"
+    - "case-based onboarding"
+
+sample_problem_statements:
+  - "Build an agent that onboards new commercial banking clients with automated KYB and beneficial-owner discovery"
+  - "Automate commercial client onboarding from application to account activation"
+  - "Build a case-management system for corporate onboarding with approver routing"
+  - "Reduce time-to-onboard for commercial clients by automating due diligence"
+
+reference_frameworks:
+  - name: "BIAN Service Domain: Customer Onboarding"
+    url: "https://bian.org/servicelandscape/"
+  - name: "FATF Recommendations — Customer Due Diligence (Recommendations 10, 11, 22, 24, 25)"
+    url: "https://www.fatf-gafi.org/en/publications/fatfrecommendations.html"
+  - name: "Wolfsberg Group Correspondent Banking DDQ"
+    url: "https://www.wolfsberg-group.org/publications"
+  - name: "FinCEN CDD Rule (U.S.)"
+    url: "https://www.fincen.gov/resources/statutes-regulations/cdd-final-rule"
+
+processes:
+  - name: "Intake and Application"
+    steps:
+      - "Capture legal entity identification (name, jurisdiction, registration number, LEI if available)"
+      - "Capture primary contact, authorized signatories, and intended product(s)"
+      - "Validate applicant eligibility and product fit"
+      - "Initiate onboarding case with durable case ID"
+  - name: "Entity Verification"
+    steps:
+      - "Retrieve legal-entity documents (articles of incorporation, certificate of good standing)"
+      - "Validate against authoritative corporate registries (D&B, Bureau van Dijk, local registry)"
+      - "Resolve ownership chain through parent entities to ultimate beneficial owners"
+      - "Verify LEI (ISO 17442) where applicable"
+  - name: "KYB / Due Diligence"
+    steps:
+      - "Beneficial owner identification (≥25% threshold per FinCEN CDD)"
+      - "Individual KYC on beneficial owners and control persons"
+      - "Sanctions screening (OFAC, EU, UN, UK) across entity and UBOs"
+      - "PEP screening"
+      - "Adverse media screening"
+      - "Enhanced due diligence (EDD) for high-risk entities (PEP, sanctioned jurisdiction nexus, crypto)"
+  - name: "Risk Rating"
+    steps:
+      - "Score customer risk from KYB outputs (entity, ownership, geography, product, channel)"
+      - "Apply institution's risk-rating model to assign tier (low/medium/high)"
+      - "Route high-risk cases to enhanced approval"
+  - name: "Approval and Exception Handling"
+    steps:
+      - "Route case to appropriate approver(s) based on risk tier"
+      - "Capture approvals with identity, timestamp, and rationale"
+      - "Handle exceptions (missing documents, screening hits, risk escalations)"
+  - name: "Product and Account Setup"
+    steps:
+      - "Create legal entity and relationship records in CRM"
+      - "Provision accounts in core banking (DDA, loan, treasury products)"
+      - "Link entities, owners, signatories with authority levels"
+      - "Configure entitlements and transaction limits"
+  - name: "Credential Provisioning"
+    steps:
+      - "Issue digital banking credentials to authorized users"
+      - "Configure MFA enrollment"
+      - "Provision tokens, API credentials, or ACH connectivity for treasury"
+      - "Send welcome package with access instructions"
+  - name: "Post-Onboarding Monitoring"
+    steps:
+      - "Register customer for ongoing sanctions and adverse-media screening"
+      - "Schedule periodic KYC refresh per risk tier"
+      - "Monitor initial transactions for deviation from expected activity"
+
+data_entities:
+  - name: "LegalEntity"
+    attributes:
+      - "leiCode (ISO 17442)"
+      - "registeredName"
+      - "tradingNames (array)"
+      - "jurisdiction"
+      - "entityType (corporation, LLC, partnership, trust, NGO)"
+      - "registrationNumber"
+      - "industryCode (NAICS/SIC)"
+      - "incorporationDate"
+      - "status (active, dissolved, suspended)"
+  - name: "BeneficialOwner"
+    attributes:
+      - "personId"
+      - "name"
+      - "dateOfBirth"
+      - "nationality"
+      - "ownershipPct"
+      - "controlType (direct, indirect, control-only)"
+      - "isPEP"
+      - "sanctionsStatus"
+  - name: "ControlPerson"
+    attributes:
+      - "personId"
+      - "role (CEO, CFO, director, authorized signatory)"
+      - "authorityScope"
+  - name: "OnboardingCase"
+    attributes:
+      - "caseId"
+      - "legalEntityId"
+      - "status (draft, in-review, approved, declined, withdrawn)"
+      - "assignedTo"
+      - "slaDeadline"
+      - "createdAt"
+      - "closedAt"
+      - "outcomeReason"
+  - name: "ScreeningHit"
+    attributes:
+      - "hitId"
+      - "caseId"
+      - "targetType (entity, UBO, control-person)"
+      - "source (OFAC, PEP, adverse-media)"
+      - "confidence"
+      - "disposition (match, no-match, escalated)"
+      - "reviewerId"
+      - "reviewedAt"
+  - name: "RiskRating"
+    attributes:
+      - "caseId"
+      - "tier (low, medium, high)"
+      - "factors (array of scored dimensions)"
+      - "score (numeric)"
+      - "ratedAt"
+      - "ratedBy (system, analyst)"
+  - name: "Approval"
+    attributes:
+      - "approvalId"
+      - "caseId"
+      - "approverId"
+      - "approverRole"
+      - "decision (approved, declined, conditional)"
+      - "conditions (array)"
+      - "rationale"
+      - "approvedAt"
+
+glossary:
+  - term: "KYB"
+    definition: "Know Your Business — due diligence performed on legal-entity customers to understand the business, its ownership, and its activities."
+  - term: "UBO"
+    definition: "Ultimate Beneficial Owner — the natural person(s) who ultimately own(s) or control(s) a legal entity, typically at a 25% ownership or control threshold."
+  - term: "LEI"
+    definition: "Legal Entity Identifier — ISO 17442 globally unique 20-character identifier for legal entities participating in financial transactions."
+  - term: "CDD"
+    definition: "Customer Due Diligence — the core KYC/KYB process of identifying and verifying a customer and assessing their risk."
+  - term: "EDD"
+    definition: "Enhanced Due Diligence — additional scrutiny applied to higher-risk customers (PEPs, high-risk jurisdictions, complex ownership)."
+  - term: "PEP"
+    definition: "Politically Exposed Person — a person entrusted with a prominent public function, carrying elevated corruption/bribery risk."
+  - term: "SAR"
+    definition: "Suspicious Activity Report — a filing made to FinCEN (U.S.) when a bank detects suspicious transactions."
+  - term: "OFAC"
+    definition: "Office of Foreign Assets Control — U.S. Treasury office that administers sanctions lists."
+  - term: "Adverse media"
+    definition: "Negative news about a person or entity that may indicate elevated risk (fraud, corruption, criminal involvement)."
+  - term: "Control person"
+    definition: "An individual with significant management authority over an entity, regardless of ownership percentage (e.g., CEO, president, CFO)."
+  - term: "Beneficial owner"
+    definition: "Under FinCEN CDD, any individual owning ≥25% of equity OR exercising significant control over the entity."
+
+typical_integrations:
+  - "Corporate registries and entity data (D&B, Bureau van Dijk Orbis, local state/country registries)"
+  - "Sanctions and PEP data providers (Dow Jones Risk & Compliance, Refinitiv World-Check, ComplyAdvantage)"
+  - "Adverse media providers (LexisNexis, RDC, NewsEdge)"
+  - "Identity verification (Jumio, Onfido, Socure) for individual KYC on UBOs"
+  - "Core banking systems (Temenos T24, FIS IBS, Finacle, Mambu)"
+  - "CRM (Salesforce Financial Services Cloud, Microsoft Dynamics)"
+  - "Document management (M-Files, SharePoint, OpenText)"
+  - "E-signature (DocuSign, Adobe Sign)"
+  - "Case management (Pega, Appian, ServiceNow)"
+
+regulations:
+  - name: "FinCEN CDD Rule (U.S.)"
+    impact: >
+      Requires identification of beneficial owners at 25% equity or significant control
+      threshold. Drives mandatory UBO capture in onboarding, CIP verification,
+      and periodic refresh. Records must be retained 5 years after account closure.
+  - name: "USA PATRIOT Act Section 326 (CIP)"
+    impact: >
+      Customer Identification Program requirements. Mandates identity verification
+      for legal entities and their authorized representatives. Drives ID verification
+      steps and documentation retention.
+  - name: "OFAC Sanctions Screening (U.S.)"
+    impact: >
+      Mandates real-time screening of customers, beneficial owners, and related
+      parties against OFAC SDN and sectoral lists at onboarding and on an ongoing
+      basis. Drives screening integration, hit-disposition workflow, and audit logs.
+  - name: "FATF Recommendation 10 (Customer Due Diligence)"
+    impact: >
+      International standard requiring risk-based CDD. Drives the risk-rating model
+      and enhanced due diligence for higher-risk customers.
+  - name: "FATF Recommendation 22 (Designated Non-Financial Businesses)"
+    impact: >
+      Extends CDD obligations to commercial clients in specific high-risk sectors
+      (real estate, gems, trust service providers). Drives sector-specific EDD
+      rules at onboarding."
+  - name: "GDPR / CCPA (Data Subject Rights for UBOs)"
+    impact: >
+      UBO records contain PII. Drives consent capture, data-minimization on
+      display, encryption at rest, and process for data-subject requests.
+  - name: "OCC Third-Party Risk Management Guidance"
+    impact: >
+      Screening providers and data vendors are third parties requiring ongoing
+      oversight. Drives vendor diligence, SOC-2 review, and exit planning."
+
+kpis:
+  - "Time-to-onboard (calendar days from application to first transaction)"
+  - "Straight-through processing rate (% of cases approved without manual intervention)"
+  - "Rework rate (% of cases returned to prior step)"
+  - "Case-reopening rate post-approval"
+  - "Screening false-positive rate"
+  - "SLA adherence rate (cases closed within target)"
+  - "Cost per onboarded client"
+  - "Regulatory finding count on onboarding process"
+
+common_patterns:
+  - name: "Case-Based Workflow with Event-Sourced Log"
+    description: >
+      Model onboarding as a stateful case backed by an append-only event log.
+      Every state transition, document upload, screening result, approval,
+      and communication appends an event. The case's current state is a
+      projection of the event stream.
+    when_to_apply: >
+      Always. This is the load-bearing pattern for any regulated onboarding
+      process because it makes the audit trail a byproduct of normal
+      operation rather than a separate logging concern.
+    anti_patterns:
+      - "Treating onboarding as a single-form submission"
+      - "State stored only as a snapshot with no history"
+      - "Hardcoded approval chains that can't be changed without a code deploy"
+      - "Deleting or rewriting events to 'fix' cases (breaks audit integrity)"
+  - name: "Risk-Tiered Routing and Approval"
+    description: >
+      Compute a risk tier early in the case lifecycle, then route the case
+      through a tier-appropriate workflow (low-risk auto-approve with
+      post-hoc sampling; medium-risk single approver; high-risk senior-
+      officer approval with EDD).
+    when_to_apply: >
+      Always. Uniform workflow for all cases either over-burdens low-risk
+      or under-scrutinizes high-risk.
+    anti_patterns:
+      - "One workflow regardless of risk (slow for low-risk, weak for high-risk)"
+      - "Tier decided after full review instead of gating the review depth"
+      - "No mechanism to re-tier when new information arrives"
+  - name: "Deterministic Skeleton, AI Leaves"
+    description: >
+      Workflow structure and compliance controls are deterministic code;
+      AI is used narrowly — document extraction, entity disambiguation,
+      adverse-media summarization. The case state machine does not depend
+      on LLM outputs being correct.
+    when_to_apply: >
+      Any onboarding application adopting AI. The regulator expects
+      reproducible decisioning; stochastic skeletons make that hard.
+    anti_patterns:
+      - "LLM deciding whether to approve, decline, or escalate"
+      - "Ownership chain resolved entirely by LLM with no deterministic validation"
+      - "LLM-written rationales in audit logs without corresponding evidence trail"
+  - name: "Periodic KYC Refresh Scheduled at Onboarding"
+    description: >
+      At onboarding completion, schedule the next KYC refresh based on
+      risk tier. Don't rely on reactive refreshes triggered by activity
+      alerts — schedule them as a standing obligation.
+    when_to_apply: >
+      Always. Refresh is a regulatory requirement, not an optional
+      hygiene practice.
+    anti_patterns:
+      - "No scheduled refresh; only reactive reviews"
+      - "Refresh schedule stored in a spreadsheet outside the case system"
+
+anti_patterns:
+  - "Manual resolution of complex corporate ownership chains (error-prone, slow, unscalable)"
+  - "Screening run once at onboarding with no ongoing monitoring"
+  - "UBO threshold applied inconsistently across jurisdictions"
+  - "Approval rationale captured as a boolean with no narrative"
+  - "Onboarding case marked complete before all required documents are validated"
+  - "PII stored in application logs for debugging"
+  - "Screening-hit dispositions stored in free text with no structured confidence or rationale"

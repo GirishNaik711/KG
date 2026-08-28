@@ -1,0 +1,150 @@
+id: financial-services/commercial-banking/commercial-client-onboarding/risk-rating
+parent_id: financial-services/commercial-banking/commercial-client-onboarding
+level: 4
+name: "Risk Rating"
+description: >
+  Computing a money-laundering / financial-crime risk tier for a commercial
+  client based on KYB inputs: entity type, industry, geography, ownership
+  complexity, PEP exposure, product usage, and channel. The rating drives
+  approval routing, ongoing-monitoring cadence, and EDD requirements.
+
+typical_horizontals:
+  - ai-applications
+  - ai-infra-platforms
+
+keywords:
+  strong:
+    - "risk rating"
+    - "customer risk rating"
+    - "kyc risk tier"
+    - "risk scoring"
+  moderate:
+    - "risk tier"
+    - "aml risk"
+    - "risk model"
+    - "customer risk assessment"
+
+sample_problem_statements:
+  - "Build an explainable AML customer-risk-rating model for commercial clients"
+  - "Automate risk tiering with bias testing and audit trail"
+
+processes:
+  - name: "Risk Factor Collection"
+    steps:
+      - "Gather entity attributes from KYB outputs (entity type, industry, country)"
+      - "Gather ownership complexity metrics (chain depth, jurisdictions crossed)"
+      - "Gather PEP and sanctions exposure flags"
+      - "Gather product and channel info (cash-intensive, correspondent banking, crypto)"
+  - name: "Risk Scoring"
+    steps:
+      - "Apply institution's risk-rating model to factors"
+      - "Compute per-factor scores and aggregate"
+      - "Assign tier: low, medium, high"
+      - "Capture contributing factors for explainability"
+  - name: "Tier Assignment and Gating"
+    steps:
+      - "Low: auto-approve workflow with post-hoc sampling"
+      - "Medium: single approver; standard monitoring cadence"
+      - "High: senior-officer approval; EDD required; enhanced ongoing monitoring"
+  - name: "Rationale Capture"
+    steps:
+      - "Record contributing factors with weights"
+      - "Record model version and rule set"
+      - "Make rating reproducible from inputs"
+
+data_entities:
+  - name: "RiskFactor"
+    attributes:
+      - "name (e.g., high-risk-industry, cash-intensive-business)"
+      - "value"
+      - "score"
+      - "weight"
+      - "source (which KYB artifact produced it)"
+  - name: "RiskRating"
+    attributes:
+      - "caseId"
+      - "tier (low, medium, high)"
+      - "aggregateScore"
+      - "factors (array of RiskFactor)"
+      - "modelVersion"
+      - "computedAt"
+      - "overriddenBy (analystId if human overrode)"
+      - "overrideRationale"
+
+glossary:
+  - term: "Customer risk rating"
+    definition: "Institution's assessment of money-laundering and financial-crime risk for a specific customer."
+  - term: "EDD threshold"
+    definition: "Risk tier at or above which Enhanced Due Diligence is required."
+  - term: "Risk factor"
+    definition: "A measurable attribute that contributes to the overall risk score (industry, geography, ownership complexity, product type)."
+  - term: "Model governance"
+    definition: "Controls around a risk-rating model — version control, back-testing, bias testing, annual review, regulator-facing documentation."
+
+typical_integrations:
+  - "Industry risk data (FATF high-risk jurisdictions, FinCEN advisories)"
+  - "Model-management platforms (MLflow, SageMaker Model Registry)"
+  - "Model-governance tooling (ModelOp, Dataiku Govern)"
+
+regulations:
+  - name: "FATF Recommendation 10 (Risk-Based CDD)"
+    impact: >
+      Mandates risk-based approach — lower diligence for lower risk,
+      enhanced diligence for higher risk. Drives existence of tiered
+      workflow and EDD gate.
+  - name: "SR 11-7 / OCC 2011-12 — Model Risk Management (U.S.)"
+    impact: >
+      Requires formal model-risk-management program: development
+      standards, validation, ongoing monitoring, governance. Drives
+      model versioning, back-testing, and annual review cadence.
+  - name: "Equal Credit Opportunity Act / Fair Lending (U.S.)"
+    impact: >
+      Risk-rating models must not use protected-class proxies in
+      credit-adjacent decisions. Drives bias testing and protected-
+      attribute audit.
+
+kpis:
+  - "Model accuracy (back-tested against known SAR-filed cases)"
+  - "False-high-risk rate (drives onboarding friction)"
+  - "False-low-risk rate (drives regulatory exposure)"
+  - "Analyst override rate"
+  - "Rating stability over refresh cycles"
+
+common_patterns:
+  - name: "Explainable Rule-Based Model with ML-Driven Factor Discovery"
+    description: >
+      Use a deterministic rule/scoring engine for the rating decision
+      itself; use ML to surface candidate factors during model development.
+      Keeps the production decision path auditable while leveraging
+      learning from historical data.
+    when_to_apply: >
+      When regulator-facing explainability is required (always, for
+      AML customer risk rating).
+    anti_patterns:
+      - "Opaque ML model producing tier directly with no factor attribution"
+      - "Hardcoded rules with no back-testing against outcomes"
+      - "Ad-hoc factor weights changed by analysts without change control"
+  - name: "Versioned Model with Parallel Run"
+    description: >
+      New model versions run in parallel with the current production
+      model, producing shadow ratings, until back-testing validates
+      performance. Cutover is explicit and reversible.
+    when_to_apply: "Every model update."
+    anti_patterns:
+      - "Hot-swapping production models without shadow run"
+      - "No rollback plan if the new model produces higher false-positive rate"
+  - name: "Override-with-Rationale"
+    description: >
+      Analysts can override model output but must record a rationale.
+      Overrides are tracked as a dataset for model improvement and
+      for regulator review.
+    when_to_apply: "Always."
+    anti_patterns:
+      - "Silent overrides with no trail"
+      - "Override rate not monitored (high rate signals model drift)"
+
+anti_patterns:
+  - "LLM as the risk-rating model (non-reproducible, non-auditable)"
+  - "Risk rating computed once at onboarding, never refreshed"
+  - "Model versions without documented back-testing results"
+  - "Risk tier used for routing but not surfaced to downstream approvers as context"

@@ -1,0 +1,15 @@
+schema_version: "1.0"
+regime: soc2
+trigger_signals:
+  - soc 2
+  - soc2
+  - trust services
+  - aicpa
+  - type ii
+  - type i
+
+mandates:
+  - mandate_id: CC-SOC2-001
+    statement: "All third-party sub-processors must be assessed for SOC 2 compliance or equivalent."
+  - mandate_id: CC-SOC2-002
+    statement: "Access to production systems must be logged and auditable."

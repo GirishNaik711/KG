@@ -1,0 +1,239 @@
+schema_version: "2.0"
+technology_domain: ai-applications
+name: "AI-Powered Applications Build Playbook"
+description: >
+  The end-user AI-application archetype — chatbots, copilots, RAG apps,
+  multi-agent applications, agentic workflows, assistants, content generation, and
+  summarization products, built on top of AI infrastructure (ai-infra-platforms),
+  not the infrastructure itself. The patterns below carry the archetype-level
+  framing; each names when it applies and what to avoid.
+
+published: true
+
+# NOTE: keywords for this archetype live ONLY in _registry.yaml (never in this body).
+
+# One cross-cutting instruction, applied in every phase (discuss, plan, build, deploy).
+guidance: >
+  Build the application skeleton deterministically (auth, routing, state,
+  validation) and push stochastic behavior into narrow, testable leaves: classify
+  intents explicitly, ground factual answers with citations, use typed tool calls,
+  gate high-stakes actions behind human confirmation, and evaluate every
+  prompt/model/retrieval change against a regression suite. Apply the matching
+  pattern's when_to_apply and avoid its anti-patterns. When this playbook is
+  selected alongside another, the effective scope is the intersection of both.
+
+patterns:
+  - name: Intent-First Design
+    description: >
+      Start from a typed intent taxonomy, not from prompts. Every user turn
+      classifies into a known intent (or "unknown" which routes to a
+      clarifying response). Intents drive prompt selection, tool access,
+      and evaluation sets.
+    when_to_apply: >
+      Any conversational AI application with more than 3 distinct user goals.
+    anti_patterns:
+      - One giant system prompt handling every use case
+      - Intents inferred implicitly from user phrasing without explicit routing
+      - Adding new capabilities by lengthening the system prompt
+      - No "unknown intent" path with a graceful clarifying response
+
+  - name: Grounded Generation Over Free Generation
+    description: >
+      Wherever accuracy matters, retrieve first and generate conditioned on
+      retrieved context with a citation requirement. Free generation is
+      reserved for tasks where fabrication is acceptable (brainstorming,
+      creative writing).
+    when_to_apply: >
+      Any application making factual claims, referencing user data, or
+      operating in a regulated domain.
+    anti_patterns:
+      - RAG "for everything" (retrieving when retrieval adds no signal)
+      - Generated responses without citations that users can verify
+      - Treating retrieval as a nice-to-have instead of a correctness control
+      - No distinction between "grounded" and "creative" response modes
+
+  - name: Structured Tool Calling, Not Free-Form Reasoning
+    description: >
+      When the application needs to take actions, use typed tool calls with
+      validated arguments. Avoid designs where the LLM produces a narrative
+      that some downstream component tries to parse into actions.
+    when_to_apply: >
+      Any application where the AI can trigger side effects — database
+      writes, API calls, messages, file operations.
+    anti_patterns:
+      - Parsing "Action: X" strings out of free text
+      - Tool arguments without JSON Schema validation
+      - Tools whose semantics require reading multiple paragraphs of system prompt
+      - Letting the LLM compose raw HTTP requests
+
+  - name: Tiered Response Quality
+    description: >
+      Route intents to model tiers by complexity/stakes. Simple classification
+      or formatting intents go to a cheap fast model; synthesis and
+      high-stakes reasoning go to a capable model. Fallbacks down the
+      tiers on outage.
+    when_to_apply: >
+      Production applications with meaningful traffic volume or cost
+      sensitivity.
+    anti_patterns:
+      - One model for everything (usually the most expensive one)
+      - Routing rules hidden in prompt logic instead of explicit config
+      - No evaluation on the cheap tier, only on the expensive tier
+      - Tier selection that changes silently based on load
+
+  - name: Deterministic Skeleton, Stochastic Leaves
+    description: >
+      Make the application skeleton deterministic: auth, routing, state
+      transitions, validation. Push stochastic behavior (generation,
+      reasoning) into narrow, testable leaves. Most of the app is boring
+      normal code; the LLM is a component, not the control plane.
+    when_to_apply: >
+      Any production application with correctness, auditability, or
+      compliance requirements.
+    anti_patterns:
+      - Asking the LLM to decide control-flow questions it shouldn't own
+      - Application state machines implemented inside prompts
+      - No deterministic fallback when the stochastic leaf fails
+      - Debugging sessions that require replaying LLM outputs
+
+  - name: Conversation State as Explicit Schema
+    description: >
+      Multi-turn conversation state lives in a typed schema — current
+      intent, collected slots, pending confirmations, citations seen —
+      not in an ever-growing transcript the model re-reads each turn.
+    when_to_apply: >
+      Any multi-turn application where state persists across turns.
+    anti_patterns:
+      - Dumping the entire transcript into every turn's context
+      - Losing collected slots when the user changes intent
+      - No audit trail for why a particular response was generated
+      - Session state that cannot survive a restart
+
+  - name: Citations as a Product Feature
+    description: >
+      Make source attribution part of the UI, not a debugging aid. Users
+      who can see where an answer came from calibrate their trust and
+      catch hallucinations the model misses.
+    when_to_apply: >
+      Any grounded-response application, especially in knowledge, support,
+      and regulated domains.
+    anti_patterns:
+      - Citations rendered as opaque IDs users can't click
+      - Citations after the response instead of inline with claims
+      - Citations that link to documents but not the specific chunk
+      - Confidence scores without sources (abstract confidence is useless)
+
+  - name: Human-in-the-Loop for High-Stakes Actions
+    description: >
+      Actions with real consequences — sending external communications,
+      completing transactions, finalizing records — require explicit
+      human confirmation. Preview the action and its effects; require
+      affirmative confirmation; log the approval.
+    when_to_apply: >
+      Any application where a mistaken action has material cost.
+    anti_patterns:
+      - Agent agency as a feature that bypasses confirmation
+      - Confirmation UIs that summarize poorly or hide effects
+      - Confirmation via implicit ambiguous responses (e.g., "sure")
+      - No audit trail tying the confirmation to the specific user
+
+  - name: Graceful Unknown and Refusal
+    description: >
+      The application knows what it doesn't know. Out-of-scope requests,
+      policy-restricted topics, and low-confidence answers route to
+      explicit "I can't help with that" or "I'm not sure, here's what I'd
+      need" rather than fabricating an answer.
+    when_to_apply: >
+      Every production AI application.
+    anti_patterns:
+      - Best-effort answers to questions outside the app's scope
+      - Refusals that don't explain why or suggest an alternative
+      - Confidence silently encoded in hedging language
+      - Policy violations routed to the same path as regular answers
+
+  - name: Evaluation-Driven Iteration
+    description: >
+      Every prompt change, retrieval change, and model change passes
+      through a regression evaluation suite before shipping. The suite
+      covers the intent taxonomy, known adversarial cases, and domain-
+      specific edge cases. "The demo looked good" is not a release gate.
+    when_to_apply: >
+      Any application past the prototype stage.
+    anti_patterns:
+      - A/B testing as the first quality signal
+      - Prompt changes shipped without regression testing
+      - Evaluation suites that only the author knows how to run
+      - No way to bisect a quality regression across prompt/model/retrieval changes
+
+  - name: Prompt Injection as an Always-On Threat
+    description: >
+      Treat user input and retrieved content as hostile. Structural
+      isolation (system vs. user boundaries), pattern detection for known
+      injection attempts, and explicit safety middleware on the response
+      side. Never trust content from a retrieved document.
+    when_to_apply: >
+      Any application accepting user input or retrieving content from
+      sources outside the application boundary.
+    anti_patterns:
+      - "Our sources are trusted so retrieved content is safe"
+      - Safety controls only in the system prompt
+      - Mixing user content and instructions in an unstructured string
+      - No test cases for known injection patterns in the regression suite
+
+  - name: PII Hygiene by Default
+    description: >
+      Detect and redact PII in inputs (for privacy) and outputs (for safety
+      against leakage). Never log raw PII. Tokenize when persistence is
+      necessary. Reference the domain brief's data_entities and glossary
+      for what counts as PII in the specific domain.
+    when_to_apply: >
+      Any application that touches user data, customer data, or operates
+      in a regulated domain.
+    anti_patterns:
+      - Full transcripts written to logs without redaction
+      - PII definitions hardcoded to one jurisdiction
+      - Tokenization without a secure reverse-mapping store
+      - Detection via regex only (high false negative rate)
+
+  - name: Observable by Construction
+    description: >
+      Every user turn produces a structured trace: classified intent,
+      retrieved sources, model used, tool calls, tokens, latency, cost,
+      outcome. Observability is not bolted on — the application can't
+      run in prod without it.
+    when_to_apply: >
+      Every production AI application.
+    anti_patterns:
+      - Logs that only capture errors
+      - No trace correlation across async steps
+      - Cost telemetry aggregated at daily granularity (too coarse for runaway detection)
+      - Logs that require PII redaction as a post-processing step
+
+  - name: Degradation Paths, Not Outage Screens
+    description: >
+      When LLM providers, retrieval systems, or tools fail, the app
+      degrades gracefully — cached answers, simpler models, explicit
+      "I can't reach X right now" responses. The user experience is
+      never "the app is broken".
+    when_to_apply: >
+      Any production AI application with SLO commitments.
+    anti_patterns:
+      - Full-app failure on upstream LLM provider outage
+      - Silent fallback to a different provider with no user signal when tone/quality shifts
+      - Caching strategies that serve stale answers for live data
+      - Degraded modes that bypass safety controls
+
+  - name: Cost Budgets with User Visibility
+    description: >
+      Per-tenant, per-user, per-session cost budgets. Users on paid tiers
+      see their usage; internal admin UIs see cost per feature/intent.
+      Hitting a budget is a defined, handled state — throttle, downgrade,
+      explicit user message — not a surprise invoice.
+    when_to_apply: >
+      Any application where users can trigger agent loops or repeated
+      tool calls.
+    anti_patterns:
+      - Budget alerting only at the org level
+      - Budgets enforced via Redis races that can be stepped over
+      - No per-intent cost breakdown in admin UIs
+      - Users who can't see their own usage until the bill arrives

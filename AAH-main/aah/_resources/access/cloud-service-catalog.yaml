@@ -1,0 +1,724 @@
+
+
+schema_version: '3.0'
+description: >
+  Handler registry for cloud-readiness validation. Each entry describes ONE
+  probe function. Slug→handler mapping is NOT encoded in this file — the
+  extractor routes /aah-discuss slug decisions to handlers at seed time via
+  /aah-access skill-side LLM routing, using each handler's `description` and
+  `applies_when` prose as the routing signal.
+
+handlers:
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Relational databases
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - handler_id: aws-rds-postgres
+    module: aah.core.cloud.handlers.aws
+    function: test_rds_postgres
+    provider: aws
+    criticality_default: critical
+    description: >
+      Probes an AWS RDS PostgreSQL (or Aurora PostgreSQL) instance. Opens a
+      TCP connection via psycopg2, authenticates via a password fetched
+      from AWS Secrets Manager, and runs SELECT version().
+    applies_when: >
+      Slug response identifies a managed relational Postgres database on AWS
+      (RDS Postgres, Aurora Postgres). Example matches:
+      state-store=aws-rds-postgres, state-store=relational (with
+      cloud-provider=aws), primary-database=rds.
+    required_user_input:
+      - {field: endpoint, prompt: "RDS endpoint hostname", example: "my-db.abc123.us-east-1.rds.amazonaws.com"}
+      - {field: port,     prompt: "Port number", default: "5432"}
+      - {field: database, prompt: "Database name", example: "app_db"}
+      - {field: username, prompt: "Database username", example: "app_user"}
+    auth_options:
+      - method: secret-manager
+        display: "AWS Secrets Manager (password only)"
+        description: "Fetches password from Secrets Manager. Endpoint/port/database provided separately."
+        requires_input:
+          - {field: secret_path, prompt: "Secrets Manager secret name or ARN", example: "prod/db/postgres-creds"}
+      - method: full-config-from-secret
+        display: "AWS Secrets Manager (full config blob)"
+        description: "Fetches endpoint+port+db+user+password from one JSON secret. Accepts host/dbname or endpoint/database key names."
+        skip_user_input_fields: [endpoint, port, database, username]
+        requires_input:
+          - {field: secret_path, prompt: "Secrets Manager secret name or ARN containing full config JSON"}
+      - {method: client-config-file, display: "~/.pgpass file", description: "PostgreSQL driver reads credentials from local pgpass"}
+    sdk_package: boto3
+
+  - handler_id: azure-postgres
+    module: aah.core.cloud.handlers.azure
+    function: test_azure_postgres
+    provider: azure
+    criticality_default: critical
+    description: >
+      Probes Azure Database for PostgreSQL. Opens a TCP connection via
+      psycopg2, authenticates via Azure AD (DefaultAzureCredential) or a
+      password fetched from Azure Key Vault, and runs SELECT version().
+    applies_when: >
+      Slug response identifies a managed relational Postgres database on
+      Azure. Example matches: state-store=azure-postgres,
+      state-store=relational (with cloud-provider=azure).
+    required_user_input:
+      - {field: hostname, prompt: "Server hostname", example: "my-app-db.postgres.database.azure.com"}
+      - {field: port,     prompt: "Port number", default: "5432"}
+      - {field: database, prompt: "Database name", example: "app_db"}
+    auth_options:
+      - {method: cloud-default, display: "Azure AD Authentication (Recommended)", description: "Uses DefaultAzureCredential from your CLI session"}
+      - method: secret-manager
+        display: "Azure Key Vault"
+        description: "Fetches credentials from Key Vault"
+        requires_input:
+          - {field: vault_url,  prompt: "Key Vault URL", example: "https://my-vault.vault.azure.net/"}
+          - {field: secret_name, prompt: "Secret name in Key Vault", example: "postgres-connection-string"}
+      - {method: client-config-file, display: "~/.pgpass file"}
+    sdk_package: azure-identity
+
+  - handler_id: gcp-cloud-sql-postgres
+    module: aah.core.cloud.handlers.gcp
+    function: test_cloud_sql
+    provider: gcp
+    criticality_default: critical
+    description: >
+      Probes GCP Cloud SQL PostgreSQL. Uses the Cloud SQL Python Connector
+      with pg8000, authenticates via IAM database auth (ADC) or password
+      from GCP Secret Manager, and runs SELECT version().
+    applies_when: >
+      Slug response identifies a managed relational Postgres database on
+      GCP. Example matches: state-store=cloud-sql-postgres,
+      state-store=relational (with cloud-provider=gcp).
+    required_user_input:
+      - {field: connection_name, prompt: "Cloud SQL connection name", example: "my-project:us-central1:my-instance"}
+      - {field: database, prompt: "Database name", example: "app_db"}
+      - {field: username, prompt: "Database username (for IAM auth)", example: "app_user"}
+    auth_options:
+      - {method: iam, display: "Cloud SQL IAM Auth (Recommended)", description: "Uses Application Default Credentials"}
+      - method: secret-manager
+        display: "GCP Secret Manager"
+        description: "Fetches credentials from Secret Manager"
+        requires_input:
+          - {field: secret_path, prompt: "Secret resource name", example: "projects/my-project/secrets/db-password/versions/latest"}
+    sdk_package: google-cloud-sql-connector
+
+  - handler_id: postgres-generic
+    module: aah.core.cloud.handlers.generic
+    function: test_postgres
+    provider: general
+    criticality_default: critical
+    description: >
+      Probes a self-hosted PostgreSQL instance (EC2, on-prem, docker).
+      Opens a TCP connection via psycopg2 using pgpass or trust auth.
+    applies_when: >
+      Slug response identifies Postgres NOT managed by AWS/Azure/GCP.
+      Example matches: state-store=postgres-generic,
+      state-store=self-hosted-postgres.
+    required_user_input:
+      - {field: hostname, prompt: "PostgreSQL hostname", example: "db.internal.company.com"}
+      - {field: port,     prompt: "Port number", default: "5432"}
+      - {field: database, prompt: "Database name", example: "app_db"}
+    auth_options:
+      - {method: client-config-file, display: "~/.pgpass file", description: "Driver reads credentials from local pgpass"}
+      - {method: no-auth, display: "Trust/Peer auth (local only)", description: "No password required (pg_hba.conf trust)"}
+    sdk_package: null
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Document / NoSQL databases
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - handler_id: aws-dynamodb
+    module: aah.core.cloud.handlers.aws
+    function: test_dynamodb
+    provider: aws
+    criticality_default: critical
+    description: >
+      Probes an AWS DynamoDB table. Calls list-tables to test general access
+      OR describe-table for a specific table name. No writes.
+    applies_when: >
+      Slug response identifies AWS DynamoDB as an audit store, session
+      store, or KV backend. Example matches: audit-store=aws-dynamodb,
+      audit-store=document (with cloud-provider=aws), kv-store=dynamodb.
+    required_user_input:
+      - {field: table_name, prompt: "DynamoDB table name (or 'any' to test general access)", example: "my-app-table", default: "any"}
+      - {field: region,     prompt: "AWS region", example: "us-east-1"}
+    auth_options:
+      - {method: cloud-default, display: "AWS CLI Session (automatic)", description: "Uses your existing AWS CLI credentials"}
+    sdk_package: boto3
+
+  - handler_id: mongodb-generic
+    module: aah.core.cloud.handlers.generic
+    function: test_mongodb
+    provider: general
+    criticality_default: critical
+    description: >
+      Probes a MongoDB instance via the mongo driver. Runs a ping against
+      the admin database to prove auth + connectivity.
+    applies_when: >
+      Slug response identifies MongoDB (self-hosted, Atlas, or DocumentDB
+      compatibility mode). Example matches: audit-store=mongodb,
+      state-store=mongodb, primary-database=mongo.
+    required_user_input:
+      - {field: hostname, prompt: "MongoDB hostname", example: "mongo.internal.company.com"}
+      - {field: port,     prompt: "Port number", default: "27017"}
+      - {field: database, prompt: "Database name", example: "app_db"}
+    auth_options:
+      - method: secret-manager
+        display: "Secret Manager (fetch connection string)"
+        description: "Fetches credentials from cloud Secret Manager"
+        requires_input:
+          - {field: secret_path, prompt: "Secret path for MongoDB credentials", example: "prod/db/mongo-creds"}
+      - {method: no-auth, display: "No authentication (local/dev only)", description: "Direct connection without credentials"}
+    sdk_package: null
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Object storage
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - handler_id: aws-s3
+    module: aah.core.cloud.handlers.aws
+    function: test_s3
+    provider: aws
+    criticality_default: critical
+    description: >
+      Probes an AWS S3 bucket. Calls head-bucket to verify existence and
+      permissions, optionally list-objects-v2 on given prefixes.
+    applies_when: >
+      Slug response identifies S3 for document, artifact, or export storage
+      on AWS. Example matches: document-store=aws-s3,
+      document-store=cloud-object-storage (with cloud-provider=aws),
+      artifact-store=s3.
+    required_user_input:
+      - {field: bucket_name, prompt: "S3 bucket name", example: "my-app-assets-prod"}
+      - {field: region,      prompt: "Bucket region", example: "us-east-1"}
+    auth_options:
+      - {method: cloud-default, display: "AWS CLI Session (automatic)", description: "Uses your existing AWS CLI credentials"}
+    sdk_package: boto3
+
+  - handler_id: azure-blob
+    module: aah.core.cloud.handlers.azure
+    function: test_blob_storage
+    provider: azure
+    criticality_default: critical
+    description: >
+      Probes an Azure Blob Storage container. Calls get_container_properties
+      to verify existence + permissions.
+    applies_when: >
+      Slug response identifies Azure Blob Storage for object storage.
+      Example matches: document-store=azure-blob,
+      document-store=cloud-object-storage (with cloud-provider=azure).
+    required_user_input:
+      - {field: account_url,    prompt: "Storage account URL", example: "https://myappstore.blob.core.windows.net"}
+      - {field: container_name, prompt: "Container name", example: "assets"}
+    auth_options:
+      - {method: cloud-default, display: "Azure AD Authentication (Recommended)", description: "Uses DefaultAzureCredential"}
+    sdk_package: azure-storage-blob
+
+  - handler_id: gcp-gcs
+    module: aah.core.cloud.handlers.gcp
+    function: test_gcs
+    provider: gcp
+    criticality_default: critical
+    description: >
+      Probes a Google Cloud Storage bucket. Calls get_bucket to verify
+      existence + permissions.
+    applies_when: >
+      Slug response identifies GCS for object storage on GCP. Example
+      matches: document-store=gcs, document-store=cloud-object-storage
+      (with cloud-provider=gcp).
+    required_user_input:
+      - {field: bucket_name, prompt: "GCS bucket name", example: "my-app-assets-prod"}
+    auth_options:
+      - {method: cloud-default, display: "gcloud CLI Session (automatic)", description: "Uses Application Default Credentials"}
+    sdk_package: google-cloud-storage
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Observability / logging
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - handler_id: aws-cloudwatch
+    module: aah.core.cloud.handlers.aws
+    function: test_cloudwatch
+    provider: aws
+    criticality_default: advisory
+    description: >
+      Probes AWS CloudWatch by calling list-metrics under a given namespace.
+      Confirms observability reachability, not specific dashboards.
+    applies_when: >
+      Slug response identifies AWS CloudWatch or AgentCore Observability
+      (which writes to CloudWatch). Example matches:
+      tracing-stack=cloudwatch, tracing-stack=cloud-native-observability
+      (with cloud-provider=aws), tracing-stack=bedrock-builtin,
+      tracing-stack=agentcore-observability.
+    required_user_input:
+      - {field: region, prompt: "AWS region", example: "us-east-1"}
+    auth_options:
+      - {method: cloud-default, display: "AWS CLI Session (automatic)", description: "Uses your existing AWS CLI credentials"}
+    sdk_package: boto3
+
+  - handler_id: gcp-cloud-logging
+    module: aah.core.cloud.handlers.gcp
+    function: test_cloud_logging
+    provider: gcp
+    criticality_default: advisory
+    description: >
+      Probes GCP Cloud Logging by listing log entries for a project.
+    applies_when: >
+      Slug response identifies GCP Cloud Logging. Example matches:
+      tracing-stack=cloud-logging, tracing-stack=cloud-native-observability
+      (with cloud-provider=gcp).
+    required_user_input:
+      - {field: project_id, prompt: "GCP project ID", example: "my-project-123"}
+    optional_user_input:
+      - {field: dashboard_url, prompt: "Custom log/metrics dashboard URL (leave blank to probe control-plane only)", example: "https://grafana.agentforge.example.com"}
+      - {field: health_path,   prompt: "Health-check path", example: "/api/health", default: ""}
+    auth_options:
+      - {method: cloud-default, display: "gcloud CLI Session (automatic)", description: "Uses Application Default Credentials"}
+    sdk_package: google-cloud-logging
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # LLM guardrails
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - handler_id: aws-bedrock-guardrails
+    module: aah.core.cloud.handlers.aws
+    function: test_bedrock_guardrails
+    provider: aws
+    criticality_default: critical
+    description: >
+      Probes AWS Bedrock Guardrails by listing guardrails in the account
+      OR describing a specific guardrail id if provided.
+    applies_when: >
+      Slug response identifies Bedrock Guardrails as the LLM safety layer.
+      Example matches: guardrail-service=aws-bedrock-guardrails,
+      guardrail-service=layered-defense-in-depth (with cloud-provider=aws),
+      pii-detection-service=bedrock-guardrails-pii.
+    required_user_input:
+      - {field: region,       prompt: "AWS region for Bedrock Guardrails", example: "us-east-1"}
+      - {field: guardrail_id, prompt: "Guardrail identifier (or 'new' if not yet created)", example: "abc123def456", default: "new"}
+    auth_options:
+      - {method: cloud-default, display: "AWS CLI Session (automatic)", description: "Uses your existing AWS CLI credentials"}
+    sdk_package: boto3
+
+  - handler_id: gcp-model-armor
+    module: aah.core.cloud.handlers.gcp
+    function: test_model_armor
+    provider: gcp
+    criticality_default: critical
+    description: >
+      Probes GCP Model Armor. Lists templates for the project + location
+      OR describes a specific template id.
+    applies_when: >
+      Slug response identifies Model Armor as the LLM safety layer on GCP.
+      Example matches: guardrail-service=model-armor,
+      guardrail-service=layered-defense-in-depth (with cloud-provider=gcp).
+    required_user_input:
+      - {field: project_id, prompt: "GCP project ID", example: "my-project-123"}
+      - {field: location,   prompt: "Model Armor region (or 'global')", example: "us-central1"}
+    optional_user_input:
+      - {field: template_id, prompt: "Specific Model Armor template ID to verify (leave blank to list templates)", example: "my-guardrail-template"}
+      - {field: health_path, prompt: "Health-check path on the endpoint URL", example: "", default: ""}
+    auth_options:
+      - {method: cloud-default, display: "gcloud CLI Session (automatic)", description: "Uses Application Default Credentials"}
+    sdk_package: google-auth
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # LLM inference providers
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - handler_id: aws-bedrock
+    module: aah.core.cloud.handlers.aws
+    function: test_bedrock
+    provider: aws
+    criticality_default: critical
+    description: >
+      Probes AWS Bedrock. Lists foundation models to confirm account access
+      AND optionally invokes the given model_id with a tiny prompt to
+      verify per-model access.
+    applies_when: >
+      Slug response identifies AWS Bedrock as the LLM inference provider.
+      Example matches: llm-inference-provider=aws-bedrock,
+      llm-inference-provider=centralized-llm-proxy-gateway (with
+      cloud-provider=aws), model-provider=bedrock,
+      bedrock-model-choice=<any-model> (deprecated — that slug is a design
+      choice, not a service pointer, but historically routed here).
+    required_user_input:
+      - {field: region,   prompt: "AWS region for Bedrock", example: "us-east-1"}
+      - {field: model_id, prompt: "Bedrock model ID to validate access", example: "anthropic.claude-sonnet-4-20250514-v1:0", default: "anthropic.claude-sonnet-4-20250514-v1:0"}
+    auth_options:
+      - {method: cloud-default, display: "AWS CLI Session (automatic)", description: "Uses your existing AWS CLI credentials"}
+    sdk_package: boto3
+
+  - handler_id: gcp-vertex-ai
+    module: aah.core.cloud.handlers.gcp
+    function: test_vertex_ai
+    provider: gcp
+    criticality_default: critical
+    description: >
+      Probes GCP Vertex AI. Lists publisher models under the project +
+      location OR calls generate_content on a specified model_id.
+    applies_when: >
+      Slug response identifies Vertex AI as the LLM inference provider.
+      Example matches: llm-inference-provider=vertex-ai,
+      llm-inference-provider=centralized-llm-proxy-gateway (with
+      cloud-provider=gcp), model-provider=vertex.
+    required_user_input:
+      - {field: project_id, prompt: "GCP project ID", example: "my-project-123"}
+      - {field: location,   prompt: "Vertex AI region", example: "us-central1"}
+    optional_user_input:
+      - {field: model_id,     prompt: "Gemini/publisher model ID to invoke", example: "gemini-2.5-flash"}
+      - {field: endpoint_url, prompt: "Vertex AI Endpoint URL", example: "https://us-central1-aiplatform.googleapis.com/v1/projects/.../endpoints/...:predict"}
+      - {field: health_path,  prompt: "Health-check path on the endpoint URL", example: "", default: ""}
+    auth_options:
+      - {method: cloud-default, display: "gcloud CLI Session (automatic)", description: "Uses Application Default Credentials"}
+    sdk_package: google-cloud-aiplatform
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # AWS AgentCore runtime (deployed agents, MCP servers, A2A servers)
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - handler_id: aws-agentcore-runtime
+    module: aah.core.cloud.handlers.aws
+    function: test_agentcore_runtime
+    provider: aws
+    criticality_default: critical
+    description: >
+      Probes a deployed agent on AWS Bedrock AgentCore Runtime via the
+      control-plane bedrock-agentcore-control:GetAgentRuntime API. Returns
+      runtime metadata (status, protocol, network mode, container image
+      URI, IAM role, last-updated timestamp) without invoking the agent —
+      no data-plane call, no inference cost. Use for plain agents deployed
+      on AgentCore Runtime that are neither MCP tool servers (use
+      aws-agentcore-mcp) nor A2A agents (use aws-agentcore-a2a).
+    applies_when: >
+      Slug response identifies a deployed agent hosted on AWS Bedrock
+      AgentCore Runtime that speaks a proprietary or non-A2A protocol.
+      Example matches: agent-runtime=aws-agentcore, deployed-agent-runtime=<runtime-arn>,
+      compute-target=aws-bedrock-agentcore. NOT for MCP servers on
+      AgentCore (use aws-agentcore-mcp) or A2A agents on AgentCore (use
+      aws-agentcore-a2a).
+    required_user_input:
+      - {field: runtime_arn, prompt: "AgentCore runtime ARN for the deployed agent", example: "arn:aws:bedrock-agentcore:us-east-1:864981750171:runtime/my-agent"}
+      - {field: region,      prompt: "AWS region", example: "us-east-1"}
+    auth_options:
+      - {method: cloud-default, display: "AWS CLI Session (automatic)", description: "Uses your existing AWS CLI credentials for the control-plane GetAgentRuntime call"}
+    sdk_package: boto3
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # MCP tool servers (AWS AgentCore)
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - handler_id: aws-agentcore-mcp
+    module: aah.core.cloud.handlers.aws
+    function: test_agentcore_mcp
+    provider: aws
+    criticality_default: critical
+    description: >
+      Probes an MCP tool server deployed on AWS Bedrock AgentCore Runtime.
+      Constructs the runtime invocation URL from the provided ARN, POSTs a
+      SigV4-signed JSON-RPC `tools/list` call, parses the SSE response, and
+      returns the list of tools the MCP server advertises. Read-only.
+    applies_when: >
+      Slug response identifies one or more MCP tool servers hosted on AWS
+      AgentCore Runtime. Example matches: mcp-servers=aws-agentcore-gateway,
+      mcp-runtime=<runtime-arn>. Not for external / public MCP servers
+      (those need a generic-http handler).
+    required_user_input:
+      - {field: runtime_arn, prompt: "AgentCore MCP runtime ARN", example: "arn:aws:bedrock-agentcore:us-east-1:864981750171:runtime/my-mcp-server"}
+      - {field: region,      prompt: "AWS region", example: "us-east-1"}
+    auth_options:
+      - {method: cloud-default, display: "AWS CLI Session (SigV4, automatic)", description: "Uses your existing AWS CLI credentials to sign the MCP invocation request"}
+    sdk_package: boto3
+
+  - handler_id: aws-agentcore-a2a
+    module: aah.core.cloud.handlers.aws
+    function: test_agentcore_a2a
+    provider: aws
+    criticality_default: critical
+    description: >
+      Probes an A2A (Agent-to-Agent) server deployed on AWS Bedrock
+      AgentCore Runtime. Fetches the Agent Card from
+      `/.well-known/agent-card.json` under the runtime ARN and returns the
+      agent's name, protocol version, and advertised skills. Read-only —
+      never invokes a task or sends a message. Supports SigV4 (IAM,
+      default) and Bearer (Cognito OAuth token from Secrets Manager) auth.
+    applies_when: >
+      Slug response identifies an A2A agent hosted on AWS Bedrock AgentCore
+      Runtime. Example matches: a2a-agents=<runtime-arn>,
+      inter-agent-protocol=a2a with AWS Bedrock AgentCore as the runtime.
+      NOT for MCP servers on AgentCore (use `aws-agentcore-mcp`) or A2A
+      servers hosted outside AgentCore (would need a separate handler).
+    required_user_input:
+      - {field: runtime_arn, prompt: "AgentCore A2A runtime ARN", example: "arn:aws:bedrock-agentcore:us-east-1:864981750171:runtime/my-a2a-server"}
+      - {field: region,      prompt: "AWS region", example: "us-east-1"}
+    optional_user_input:
+      - {field: auth_method, prompt: "Auth method: sigv4 (IAM, default) or bearer (Cognito OAuth)", example: "sigv4"}
+      - {field: bearer_token_secret_path, prompt: "Secrets Manager name/ARN holding the Cognito bearer token (only if auth_method=bearer)", example: "prod/agentcore/a2a-cognito-token"}
+    auth_options:
+      - method: cloud-default
+        display: "AWS CLI Session (SigV4, automatic)"
+        description: "Uses your existing AWS CLI credentials to SigV4-sign the Agent Card fetch. Matches AgentCore's default IAM auth mode."
+        skip_user_input_fields: [bearer_token_secret_path, auth_method]
+      - method: secret-manager
+        display: "Cognito Bearer token from AWS Secrets Manager"
+        description: "Fetches an OAuth bearer token from Secrets Manager (issued by the AgentCore Cognito user pool) and sends it as Authorization: Bearer <token>. Token never enters config or logs."
+        requires_input:
+          - {field: bearer_token_secret_path, prompt: "Secrets Manager secret name or ARN"}
+          - {field: auth_method,              prompt: "Set to 'bearer'"}
+    sdk_package: boto3
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # AWS compute & secrets
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - handler_id: aws-ecs
+    module: aah.core.cloud.handlers.aws
+    function: test_ecs
+    provider: aws
+    criticality_default: critical
+    description: >
+      Probes AWS ECS in one of three modes (priority order):
+      (1) service_url — HTTPS GET against an ALB / Service Connect / public
+      IP fronting an ECS service (data plane), (2) cluster_name —
+      DescribeClusters for a specific cluster (control plane), or
+      (3) list_clusters (control plane, default fallback). Returns cluster
+      status, running task count, and active service count when a specific
+      cluster is named.
+    applies_when: >
+      Slug response identifies AWS ECS (Fargate or EC2 launch type) as the
+      compute target for long-running services or containers. Example
+      matches: compute-target=aws-ecs, compute-target=ecs-fargate,
+      container-runtime=aws-ecs.
+    required_user_input:
+      - {field: region, prompt: "AWS region", example: "us-east-1"}
+    optional_user_input:
+      - {field: service_url,   prompt: "Public URL fronting an ECS service (leave blank to probe control-plane only)", example: "https://api.example.com"}
+      - {field: cluster_name,  prompt: "ECS cluster name (leave blank to list all clusters)", example: "prod-agents"}
+      - {field: health_path,   prompt: "Health-check path appended to service_url", example: "/health", default: ""}
+    auth_options:
+      - {method: cloud-default, display: "AWS CLI Session (automatic)", description: "Uses your existing AWS CLI credentials"}
+    sdk_package: boto3
+
+  - handler_id: aws-secrets-manager
+    module: aah.core.cloud.handlers.aws
+    function: test_secrets_manager
+    provider: aws
+    criticality_default: critical
+    description: >
+      Probes AWS Secrets Manager in one of two modes (priority order):
+      (1) secret_arn — DescribeSecret on a specific secret (metadata only:
+      ARN, name, KMS key, rotation state, last-changed date; never calls
+      GetSecretValue), or (2) list_secrets (MaxResults=5) as the
+      control-plane fallback. Never fetches secret values. Use when
+      Secrets Manager is a first-class dependency of the system (secret
+      rotation, cross-service secret sharing) — the DB and AgentCore
+      handlers already resolve their own secret paths inline in Step 5,
+      so this handler is for standalone Secrets Manager reachability,
+      not for per-DB credentials.
+    applies_when: >
+      Slug response identifies AWS Secrets Manager as the secrets backend
+      for the project. Example matches: secrets-backend=aws-secrets-manager,
+      credential-store=aws-secrets-manager. NOT for AWS Systems Manager
+      Parameter Store (different service, would need a separate handler).
+    required_user_input:
+      - {field: region, prompt: "AWS region", example: "us-east-1"}
+    optional_user_input:
+      - {field: secret_arn, prompt: "Specific secret ARN to describe (leave blank to probe control-plane only)", example: "arn:aws:secretsmanager:us-east-1:864981750171:secret:prod/db/creds-abc123"}
+    auth_options:
+      - {method: cloud-default, display: "AWS CLI Session (automatic)", description: "Uses your existing AWS CLI credentials"}
+    sdk_package: boto3
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # External integrations
+  # ═══════════════════════════════════════════════════════════════════════
+
+  - handler_id: snowflake
+    module: aah.core.cloud.handlers.generic
+    function: test_snowflake
+    provider: general
+    criticality_default: critical
+    description: >
+      Probes a Snowflake account. Opens a driver connection to the account
+      + warehouse + database, authenticates via browser SSO or password
+      from cloud Secret Manager.
+    applies_when: >
+      Slug response identifies Snowflake as an analytics warehouse or data
+      integration. Example matches: warehouse=snowflake,
+      external-integration=snowflake, analytics-store=snowflake.
+    required_user_input:
+      - {field: account,   prompt: "Snowflake account identifier", example: "acme-corp.us-east-1"}
+      - {field: warehouse, prompt: "Warehouse name", example: "COMPUTE_WH"}
+      - {field: database,  prompt: "Database name", example: "ANALYTICS"}
+    auth_options:
+      - {method: sso-browser, display: "SSO / Browser Auth", description: "Opens browser for Okta/Azure AD SSO login"}
+      - method: secret-manager
+        display: "Secret Manager (password)"
+        description: "Fetches credentials from cloud Secret Manager"
+        requires_input:
+          - {field: secret_path, prompt: "Secret Manager path for Snowflake credentials", example: "prod/integrations/snowflake"}
+    sdk_package: null
+
+  - handler_id: neo4j
+    module: aah.core.cloud.handlers.generic
+    function: test_neo4j
+    provider: general
+    criticality_default: advisory
+    description: >
+      Probes a Neo4j instance via the Bolt driver. Runs a simple RETURN
+      query to confirm connectivity + auth.
+    applies_when: >
+      Slug response identifies Neo4j as a graph database. Example matches:
+      graph-store=neo4j, external-integration=neo4j.
+    required_user_input:
+      - {field: bolt_uri, prompt: "Neo4j Bolt URI", example: "bolt://neo4j.internal.company.com:7687"}
+    auth_options:
+      - method: secret-manager
+        display: "Secret Manager (password)"
+        description: "Fetches Neo4j password from cloud Secret Manager"
+        requires_input:
+          - {field: secret_path, prompt: "Secret Manager path for Neo4j credentials", example: "prod/integrations/neo4j"}
+      - {method: no-auth, display: "No authentication (local dev only)", description: "Direct connection without credentials"}
+    sdk_package: null
+
+  - handler_id: aws-msk
+    module: aah.core.cloud.handlers.aws
+    function: test_msk
+    provider: aws
+    criticality_default: advisory
+    description: >
+      Probes an AWS MSK (managed Kafka) cluster via TCP connection to the
+      bootstrap servers.
+    applies_when: >
+      Slug response identifies AWS MSK for event streaming. Example matches:
+      messaging=aws-msk, event-stream=msk, external-integration=kafka
+      (with cloud-provider=aws).
+    required_user_input:
+      - {field: bootstrap_servers, prompt: "Bootstrap server endpoints (comma-separated)", example: "b-1.mycluster.abc123.kafka.us-east-1.amazonaws.com:9092"}
+    auth_options:
+      - {method: cloud-default, display: "IAM Auth", description: "Uses AWS IAM for MSK authentication"}
+      - {method: no-auth, display: "Plaintext (VPC-secured)", description: "Direct TCP within VPC"}
+    sdk_package: null
+
+  - handler_id: kafka-generic
+    module: aah.core.cloud.handlers.generic
+    function: test_kafka
+    provider: general
+    criticality_default: advisory
+    description: >
+      Probes a self-hosted Apache Kafka cluster via TCP connection to
+      bootstrap servers.
+    applies_when: >
+      Slug response identifies Kafka not managed by AWS/GCP/Azure. Example
+      matches: messaging=kafka, event-stream=kafka.
+    required_user_input:
+      - {field: bootstrap_servers, prompt: "Bootstrap server endpoints (comma-separated)", example: "kafka-1.internal:9092,kafka-2.internal:9092"}
+    auth_options:
+      - {method: no-auth, display: "No authentication (plaintext)", description: "Direct TCP connection"}
+    sdk_package: null
+
+  - handler_id: aws-opensearch
+    module: aah.core.cloud.handlers.aws
+    function: test_opensearch
+    provider: aws
+    criticality_default: advisory
+    description: >
+      Probes an AWS OpenSearch MANAGED DOMAIN (cluster you size/configure) via HTTP
+      health check with SigV4. NOT for OpenSearch Serverless collections — use
+      aws-opensearch-serverless for those; a managed-domain-signed request against a
+      Serverless collection endpoint 404s regardless of signing correctness, since
+      Serverless doesn't expose the classic GET "/" cluster-info route this check uses.
+    applies_when: >
+      Slug response identifies an AWS OpenSearch MANAGED DOMAIN for search/vector index
+      (a cluster the user sizes/configures, k-NN plugin). Example matches:
+      search-index=aws-opensearch, vector-index-choice=opensearch-managed-domain,
+      external-integration=elasticsearch (with cloud-provider=aws). Do NOT match a
+      Serverless choice here — see aws-opensearch-serverless.
+    required_user_input:
+      - {field: endpoint, prompt: "OpenSearch domain endpoint", example: "https://search-my-domain-abc123.us-east-1.es.amazonaws.com"}
+    auth_options:
+      - {method: cloud-default, display: "AWS Signature V4 (automatic)", description: "Uses your existing AWS CLI credentials"}
+    sdk_package: boto3
+
+  - handler_id: aws-opensearch-serverless
+    module: aah.core.cloud.handlers.aws
+    function: test_opensearch_serverless
+    provider: aws
+    criticality_default: advisory
+    description: >
+      Probes an AWS OpenSearch Serverless (AOSS) vector collection via the control-plane
+      BatchGetCollection API — not a signed data-plane HTTP request. Serverless
+      collections don't expose the classic GET "/" health route managed domains do, and
+      data-plane calls are additionally gated by a separate per-collection data access
+      policy the control plane doesn't need. Checks collection status == ACTIVE.
+    applies_when: >
+      Slug response identifies AWS OpenSearch Serverless for search/vector index —
+      including collections created implicitly by Bedrock Knowledge Bases (which wrap
+      OpenSearch Serverless). Example matches: vector-index-choice=opensearch-serverless,
+      vector-index-choice=bedrock-knowledge-bases (with cloud-provider=aws).
+    required_user_input:
+      - {field: collection_name, prompt: "OpenSearch Serverless collection name", example: "bedrock-knowledge-base-5unmji"}
+    optional_user_input:
+      - {field: collection_id, prompt: "OpenSearch Serverless collection id (alternative to name)", example: "01xav4ewkn67wxjy26fc"}
+    auth_options:
+      - {method: cloud-default, display: "AWS IAM (automatic)", description: "Uses your existing AWS CLI credentials"}
+    sdk_package: boto3
+
+  - handler_id: elasticsearch-generic
+    module: aah.core.cloud.handlers.generic
+    function: test_elasticsearch
+    provider: general
+    criticality_default: advisory
+    description: >
+      Probes a self-hosted Elasticsearch cluster via HTTP health check.
+    applies_when: >
+      Slug response identifies Elasticsearch not managed by AWS/GCP/Azure.
+      Example matches: search-index=elasticsearch,
+      external-integration=elasticsearch.
+    required_user_input:
+      - {field: endpoint, prompt: "Elasticsearch URL", example: "http://elasticsearch.internal:9200"}
+    auth_options:
+      - {method: no-auth, display: "No authentication", description: "Direct HTTP connection"}
+    sdk_package: null
+
+  - handler_id: langsmith
+    module: aah.core.cloud.handlers.generic
+    function: test_langsmith
+    provider: general
+    criticality_default: advisory
+    description: >
+      Probes the LangSmith SaaS API by HEAD-ing the base API URL. The key
+      never appears in config or on disk — pulled from Secret Manager or an
+      environment variable in the subprocess only.
+    applies_when: >
+      Slug response identifies LangSmith as the LLM observability platform.
+      Example matches: tracing-stack=langsmith, observability=langsmith,
+      external-integration=langsmith.
+    required_user_input:
+      - {field: api_url, prompt: "LangSmith API URL (US, EU, or self-hosted endpoint)", example: "https://api.smith.langchain.com"}
+    auth_options:
+      - method: secret-manager
+        display: "GCP Secret Manager (Recommended)"
+        description: "Fetches the LangSmith API key from a Secret Manager resource path. The key never appears in config or on disk."
+        requires_input:
+          - {field: secret_path, prompt: "Secret Manager resource path holding the LangSmith API key", example: "projects/<project-id>/secrets/<secret-name>/versions/latest"}
+      - {method: cloud-default, display: "Environment variable (LANGSMITH_API_KEY)", description: "Reads the API key from $LANGSMITH_API_KEY (or $LANGCHAIN_API_KEY) in the calling shell. Nothing is persisted."}
+    sdk_package: null
+
+  - handler_id: databricks
+    module: aah.core.cloud.handlers.generic
+    function: test_databricks
+    provider: general
+    criticality_default: critical
+    description: >
+      Probes a Databricks workspace via HTTP health check.
+    applies_when: >
+      Slug response identifies Databricks as the analytics platform. Example
+      matches: analytics-platform=databricks, external-integration=databricks.
+    required_user_input:
+      - {field: workspace_url, prompt: "Databricks workspace URL", example: "https://adb-1234567890123456.7.azuredatabricks.net"}
+    auth_options:
+      - {method: sso-browser,   display: "SSO / Browser Auth", description: "Opens browser for workspace authentication"}
+      - {method: cloud-default, display: "CLI Profile", description: "Uses Databricks CLI profile (~/.databrickscfg)"}
+    sdk_package: null
+
+default_action: skip

@@ -1,0 +1,85 @@
+# Template: Cloudless LangGraph Feature
+# Applied when DDR-L2-001=langgraph AND DDR-SHARED-017=cloudless-managed
+#
+# Each feature in a cloudless project becomes a LangGraph node in the
+# consolidated agent. The feature's implementation is the node's logic.
+#
+# Usage: Feature decomposition agents use this template to ensure generated
+# features conform to cloudless deployment expectations.
+
+template_version: "1.0"
+applies_when:
+  - ddr_id: DDR-L2-001
+    resolved_option: langgraph
+  - ddr_id: DDR-SHARED-017
+    resolved_option: cloudless-managed
+
+feature_schema:
+  id: "{feature_id}"
+  spec_ref: "{spec_ref}"
+  description: "{description}"
+  layer: backend
+  agent_node: true  # Marks this feature as a LangGraph node
+  adr_refs: []
+  nfr_refs: []
+  integration_refs: []
+  dependencies: []
+  file_scope:
+    - "src/agents/{project_name}_agent.py"  # All features target the consolidated agent
+  acceptance_criteria:
+    - "{functional_criterion}"
+    - "Node integrates into LangGraph StateGraph with typed state transitions"
+    - "Node handles errors gracefully and returns valid state"
+  test_cases:
+    - id: "{test_id}"
+      description: "{test_description}"
+      preconditions: "Agent state initialized with required fields"
+      inputs: "{test_inputs}"
+      expected_outputs: "{expected_outputs}"
+      assertions: []
+  status: pending
+
+# Guidance for feature decomposition agents
+generation_rules:
+  - rule: "Each feature = ONE LangGraph node in the consolidated agent"
+    detail: >
+      Do NOT create separate files per feature. All features are methods
+      in src/agents/{project_name}_agent.py within the @cloudless.agent class.
+
+  - rule: "Feature dependencies = LangGraph edges"
+    detail: >
+      If F002 depends on F001, that means there's a directed edge from
+      F001's node to F002's node in the graph.
+
+  - rule: "State is shared via TypedDict"
+    detail: >
+      All nodes read from and write to a shared AgentState TypedDict.
+      Each node's output is a partial state update.
+
+  - rule: "file_scope always includes the consolidated agent file"
+    detail: >
+      Every cloudless feature touches src/agents/{project_name}_agent.py.
+      Additional tool files may be listed in file_scope if the feature
+      requires a custom tool.
+
+  - rule: "Acceptance criteria must include cloudless deployment readiness"
+    detail: >
+      At minimum: "Node integrates into LangGraph StateGraph with typed
+      state transitions" and "Node handles errors gracefully".
+
+agent_skeleton:
+  description: >
+    The Plan phase generates a single consolidated agent file as the first
+    feature (F000 or the wave-0 scaffold). All subsequent features add nodes.
+  scaffold_feature:
+    id: "F000"
+    description: "Agent scaffold — StateGraph, state schema, cloudless decorator"
+    file_scope:
+      - "src/agents/{project_name}_agent.py"
+      - "pyproject.toml"
+    acceptance_criteria:
+      - "@cloudless.agent decorator applied with correct name and framework"
+      - "StateGraph compiles with START and END nodes"
+      - "pyproject.toml includes cloudless[langgraph,{cloud}] dependency"
+      - "Agent class has set_up() and build() methods"
+    dependencies: []

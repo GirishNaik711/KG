@@ -1,0 +1,428 @@
+{
+  "flask": {
+    "description": "Micro web framework",
+    "symbols": 852,
+    "embed_time_s": 6.49,
+    "queries": [
+      {
+        "question": "what handles HTTP requests?",
+        "latency_ms": 60.0,
+        "results": [
+          {
+            "score": 0.3211,
+            "name": "test_handle_generic_http",
+            "kind": "method",
+            "file_path": "tests/test_user_error_handler.py",
+            "start_line": 269
+          },
+          {
+            "score": 0.2995,
+            "name": "handle_http_exception",
+            "kind": "method",
+            "file_path": "src/flask/app.py",
+            "start_line": 830
+          },
+          {
+            "score": 0.2767,
+            "name": "finalize_request",
+            "kind": "method",
+            "file_path": "src/flask/app.py",
+            "start_line": 1021
+          }
+        ]
+      },
+      {
+        "question": "session management and cookies",
+        "latency_ms": 49.0,
+        "results": [
+          {
+            "score": 0.5766,
+            "name": "should_set_cookie",
+            "kind": "method",
+            "file_path": "src/flask/sessions.py",
+            "start_line": 233
+          },
+          {
+            "score": 0.5538,
+            "name": "SecureCookieSession",
+            "kind": "class",
+            "file_path": "src/flask/sessions.py",
+            "start_line": 57
+          },
+          {
+            "score": 0.5449,
+            "name": "test_session_cookie_setting",
+            "kind": "function",
+            "file_path": "tests/test_basic.py",
+            "start_line": 498
+          }
+        ]
+      },
+      {
+        "question": "template rendering engine",
+        "latency_ms": 39.0,
+        "results": [
+          {
+            "score": 0.6447,
+            "name": "render_template",
+            "kind": "function",
+            "file_path": "src/flask/templating.py",
+            "start_line": 136
+          },
+          {
+            "score": 0.5536,
+            "name": "render_template_string",
+            "kind": "function",
+            "file_path": "src/flask/templating.py",
+            "start_line": 151
+          },
+          {
+            "score": 0.486,
+            "name": "test_before_render_template",
+            "kind": "function",
+            "file_path": "tests/test_signals.py",
+            "start_line": 25
+          }
+        ]
+      },
+      {
+        "question": "error handling and debugging",
+        "latency_ms": 37.0,
+        "results": [
+          {
+            "score": 0.519,
+            "name": "test_error_handling",
+            "kind": "function",
+            "file_path": "tests/test_basic.py",
+            "start_line": 886
+          },
+          {
+            "score": 0.5183,
+            "name": "test_baseexception_error_handling",
+            "kind": "function",
+            "file_path": "tests/test_basic.py",
+            "start_line": 945
+          },
+          {
+            "score": 0.5014,
+            "name": "test_user_error_handling",
+            "kind": "function",
+            "file_path": "tests/test_basic.py",
+            "start_line": 970
+          }
+        ]
+      },
+      {
+        "question": "URL routing and dispatch",
+        "latency_ms": 18.0,
+        "results": [
+          {
+            "score": 0.4867,
+            "name": "dispatch_request",
+            "kind": "method",
+            "file_path": "tests/type_check/typing_route.py",
+            "start_line": 105
+          },
+          {
+            "score": 0.4106,
+            "name": "dispatch_request",
+            "kind": "method",
+            "file_path": "src/flask/app.py",
+            "start_line": 966
+          },
+          {
+            "score": 0.4099,
+            "name": "dispatch_request",
+            "kind": "method",
+            "file_path": "src/flask/views.py",
+            "start_line": 78
+          }
+        ]
+      }
+    ]
+  },
+  "fastapi": {
+    "description": "Modern async API framework",
+    "symbols": 4870,
+    "embed_time_s": 3.32,
+    "queries": [
+      {
+        "question": "dependency injection system",
+        "latency_ms": 79.0,
+        "results": [
+          {
+            "score": 0.4879,
+            "name": "Dependant",
+            "kind": "class",
+            "file_path": "fastapi/dependencies/models.py",
+            "start_line": 32
+          },
+          {
+            "score": 0.4575,
+            "name": "SolvedDependency",
+            "kind": "class",
+            "file_path": "fastapi/dependencies/utils.py",
+            "start_line": 590
+          },
+          {
+            "score": 0.4443,
+            "name": "MethodsDependency",
+            "kind": "class",
+            "file_path": "tests/test_dependency_class.py",
+            "start_line": 30
+          }
+        ]
+      },
+      {
+        "question": "request validation and parsing",
+        "latency_ms": 66.0,
+        "results": [
+          {
+            "score": 0.4561,
+            "name": "request_validation_exception_handler",
+            "kind": "function",
+            "file_path": "fastapi/exception_handlers.py",
+            "start_line": 20
+          },
+          {
+            "score": 0.4477,
+            "name": "request_validation_handler",
+            "kind": "function",
+            "file_path": "tests/test_validation_error_context.py",
+            "start_line": 34
+          },
+          {
+            "score": 0.4373,
+            "name": "request_validation_exception_handler",
+            "kind": "function",
+            "file_path": "tests/test_exception_handlers.py",
+            "start_line": 12
+          }
+        ]
+      },
+      {
+        "question": "authentication and security",
+        "latency_ms": 62.0,
+        "results": [
+          {
+            "score": 0.4835,
+            "name": "authenticate_user",
+            "kind": "function",
+            "file_path": "docs_src/security/tutorial004_py310.py",
+            "start_line": 71
+          },
+          {
+            "score": 0.4825,
+            "name": "authenticate_user",
+            "kind": "function",
+            "file_path": "docs_src/security/tutorial005_py310.py",
+            "start_line": 86
+          },
+          {
+            "score": 0.4809,
+            "name": "authenticate_user",
+            "kind": "function",
+            "file_path": "docs_src/security/tutorial004_an_py310.py",
+            "start_line": 72
+          }
+        ]
+      },
+      {
+        "question": "websocket handling",
+        "latency_ms": 63.0,
+        "results": [
+          {
+            "score": 0.7129,
+            "name": "websocket",
+            "kind": "method",
+            "file_path": "fastapi/applications.py",
+            "start_line": 1297
+          },
+          {
+            "score": 0.6326,
+            "name": "websocket",
+            "kind": "method",
+            "file_path": "fastapi/routing.py",
+            "start_line": 1502
+          },
+          {
+            "score": 0.6284,
+            "name": "test_websocket_handle_disconnection",
+            "kind": "function",
+            "file_path": "tests/test_tutorial/test_websockets/test_tutorial003.py",
+            "start_line": 38
+          }
+        ]
+      },
+      {
+        "question": "OpenAPI schema generation",
+        "latency_ms": 78.0,
+        "results": [
+          {
+            "score": 0.6967,
+            "name": "test_openapi_schema",
+            "kind": "function",
+            "file_path": "tests/test_tutorial/test_generate_clients/test_tutorial001.py",
+            "start_line": 35
+          },
+          {
+            "score": 0.6964,
+            "name": "test_openapi_schema",
+            "kind": "function",
+            "file_path": "tests/test_tutorial/test_generate_clients/test_tutorial003.py",
+            "start_line": 32
+          },
+          {
+            "score": 0.6946,
+            "name": "test_openapi_schema",
+            "kind": "function",
+            "file_path": "tests/test_tutorial/test_generate_clients/test_tutorial002.py",
+            "start_line": 32
+          }
+        ]
+      }
+    ]
+  },
+  "django": {
+    "description": "Full-stack web framework",
+    "symbols": 33838,
+    "embed_time_s": 15.51,
+    "queries": [
+      {
+        "question": "how does the ORM handle database queries?",
+        "latency_ms": 508.0,
+        "results": [
+          {
+            "score": 0.5277,
+            "name": "__or__",
+            "kind": "method",
+            "file_path": "django/db/models/query_utils.py",
+            "start_line": 78
+          },
+          {
+            "score": 0.5198,
+            "name": "__or__",
+            "kind": "method",
+            "file_path": "django/db/models/query.py",
+            "start_line": 501
+          },
+          {
+            "score": 0.5044,
+            "name": "db",
+            "kind": "method",
+            "file_path": "django/db/models/query.py",
+            "start_line": 2073
+          }
+        ]
+      },
+      {
+        "question": "user authentication and login",
+        "latency_ms": 483.0,
+        "results": [
+          {
+            "score": 0.5441,
+            "name": "LoginView",
+            "kind": "class",
+            "file_path": "django/contrib/auth/views.py",
+            "start_line": 77
+          },
+          {
+            "score": 0.5259,
+            "name": "login",
+            "kind": "function",
+            "file_path": "django/contrib/auth/__init__.py",
+            "start_line": 151
+          },
+          {
+            "score": 0.489,
+            "name": "LoginRequiredMiddleware",
+            "kind": "class",
+            "file_path": "django/contrib/auth/middleware.py",
+            "start_line": 42
+          }
+        ]
+      },
+      {
+        "question": "middleware that processes HTTP responses",
+        "latency_ms": 408.0,
+        "results": [
+          {
+            "score": 0.6329,
+            "name": "process_response",
+            "kind": "method",
+            "file_path": "django/middleware/http.py",
+            "start_line": 14
+          },
+          {
+            "score": 0.6293,
+            "name": "process_response",
+            "kind": "method",
+            "file_path": "django/contrib/redirects/middleware.py",
+            "start_line": 23
+          },
+          {
+            "score": 0.627,
+            "name": "process_response",
+            "kind": "method",
+            "file_path": "django/contrib/sessions/middleware.py",
+            "start_line": 22
+          }
+        ]
+      },
+      {
+        "question": "database migration system",
+        "latency_ms": 402.0,
+        "results": [
+          {
+            "score": 0.6713,
+            "name": "Migration",
+            "kind": "method",
+            "file_path": "django/db/migrations/recorder.py",
+            "start_line": 25
+          },
+          {
+            "score": 0.6567,
+            "name": "Migration",
+            "kind": "class",
+            "file_path": "django/db/migrations/migration.py",
+            "start_line": 9
+          },
+          {
+            "score": 0.5831,
+            "name": "applied_migrations",
+            "kind": "method",
+            "file_path": "django/db/migrations/recorder.py",
+            "start_line": 84
+          }
+        ]
+      },
+      {
+        "question": "form validation logic",
+        "latency_ms": 467.0,
+        "results": [
+          {
+            "score": 0.5766,
+            "name": "validate",
+            "kind": "method",
+            "file_path": "django/forms/models.py",
+            "start_line": 1603
+          },
+          {
+            "score": 0.5561,
+            "name": "form_valid",
+            "kind": "method",
+            "file_path": "django/views/generic/edit.py",
+            "start_line": 61
+          },
+          {
+            "score": 0.5498,
+            "name": "validate",
+            "kind": "method",
+            "file_path": "django/db/models/fields/related.py",
+            "start_line": 1207
+          }
+        ]
+      }
+    ]
+  }
+}

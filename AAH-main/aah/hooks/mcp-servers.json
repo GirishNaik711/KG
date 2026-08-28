@@ -1,0 +1,9 @@
+{
+  "_comment": "Source of truth for the MCP servers `aah install`/`aah setup` merges into the host MCP config. For Claude this is <project>/.mcp.json (project scope) or ~/.claude.json (global scope) — NOT inside .claude/. Merges are additive and idempotent, keyed by the `_aah` marker: a server is added ONLY if its name is absent (a server the user defined themselves is never overwritten), and uninstall removes exactly the servers aah recorded under `_aah.mcp_servers`. To add a new MCP server, add an entry under `mcpServers` here — no Python change needed. NOTE: Claude Code connects MCP servers only at session STARTUP, so the config must be written before `claude` boots; running `aah setup` in the terminal first guarantees same-session availability.",
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    }
+  }
+}

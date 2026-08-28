@@ -1,0 +1,565 @@
+# ============================================================================
+# AAH Built-In Industry Defaults — All Languages, Frameworks, and Platforms
+# ============================================================================
+#
+# This is the single source of truth for all built-in enterprise standards
+# shipped with AAH. Rules are organized by stack layer:
+#   1. Languages (python, javascript, typescript, go)
+#   2. Frameworks (fastapi, django, react)
+#   3. Data stores (postgresql)
+#   4. Cloud platforms (aws)
+#
+# Resolution: These are PRIORITY 3 (lowest). Company standards (priority 1)
+# and domain compliance (priority 2) override any rule here by matching
+# rule ID or by listing rule IDs in disabled_rules.
+#
+# Schema: Every rule has id, category, priority, description, remediation.
+# The LLM evaluates code against the description — no regex, no tooling.
+# ============================================================================
+
+standard_id: "AAH-INDUSTRY-DEFAULTS"
+name: "AAH Built-In Industry Defaults"
+version: "1.0"
+source_type: "industry-default"
+
+applies_to:
+  languages: ["*"]
+  frameworks: ["*"]
+
+# ---------------------------------------------------------------------------
+# PYTHON
+# ---------------------------------------------------------------------------
+python:
+  applies_to:
+    languages: ["python"]
+  rules:
+    # -- Security --
+    - id: "PY-SEC-001"
+      category: "security"
+      priority: "critical"
+      description: "No hardcoded credentials, API keys, tokens, or secrets in source code. This includes passwords, connection strings, and signing keys."
+      remediation: "Use environment variables, a .env file excluded from version control, or a secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault)."
+
+    - id: "PY-SEC-002"
+      category: "security"
+      priority: "critical"
+      description: "Never use string formatting, concatenation, or f-strings to build SQL queries. This includes format(), %, f'', and + operators inside execute() calls."
+      remediation: "Use SQLAlchemy ORM, parameterized queries with bind parameters, or prepared statements."
+
+    - id: "PY-SEC-003"
+      category: "security"
+      priority: "critical"
+      description: "Validate and sanitize all external input — user input, API parameters, query strings, headers, file uploads, and webhook payloads."
+      remediation: "Use Pydantic models, marshmallow schemas, or cerberus for input validation at the boundary."
+
+    - id: "PY-SEC-004"
+      category: "security"
+      priority: "high"
+      description: "Do not use pickle, eval(), exec(), or __import__() on untrusted data. These allow arbitrary code execution."
+      remediation: "Use JSON, MessagePack, or Protocol Buffers for serialization. Use ast.literal_eval() for safe evaluation of literals."
+
+    # -- Conventions --
+    - id: "PY-CONV-001"
+      category: "conventions"
+      priority: "low"
+      description: "Follow PEP 8 naming: snake_case for functions, methods, and variables; PascalCase for classes; UPPER_SNAKE_CASE for module-level constants."
+      remediation: "Rename identifiers to match PEP 8 conventions."
+
+    - id: "PY-CONV-002"
+      category: "conventions"
+      priority: "low"
+      description: "Use type hints for all public function parameters and return values. Internal/private helpers may omit hints."
+      remediation: "Add type annotations using built-in types (list, dict, str) or typing module."
+
+    - id: "PY-CONV-003"
+      category: "conventions"
+      priority: "low"
+      description: "Organize imports in three groups separated by blank lines: stdlib, third-party, local. Use absolute imports."
+      remediation: "Reorder imports following PEP 8 / isort conventions."
+
+    # -- Testing --
+    - id: "PY-TEST-001"
+      category: "testing"
+      priority: "high"
+      description: "New feature code must have at least 80% line coverage with functional tests. No mock frameworks allowed — all tests must run against real services."
+      remediation: "Add functional tests covering public functions, edge cases, and error paths. Use real database, real API calls."
+
+    # -- Error Handling --
+    - id: "PY-ERR-001"
+      category: "error_handling"
+      priority: "high"
+      description: "Never use bare 'except:' or 'except Exception:' as a catch-all. Always catch specific exception types."
+      remediation: "Replace bare except with specific exceptions (ValueError, KeyError, ConnectionError, etc.)."
+
+    - id: "PY-ERR-002"
+      category: "error_handling"
+      priority: "medium"
+      description: "Do not silently swallow exceptions with empty except blocks. At minimum, log the error."
+      remediation: "Add logging.exception() or logging.error() inside except blocks, or re-raise with context."
+
+    # -- Performance --
+    - id: "PY-PERF-001"
+      category: "performance"
+      priority: "medium"
+      description: "Use async/await for I/O-bound operations when running in an async framework (FastAPI, aiohttp). Do not call synchronous I/O (requests, time.sleep, open()) inside async functions."
+      remediation: "Use httpx.AsyncClient, asyncio.sleep(), aiofiles, or run_in_executor() for blocking calls."
+
+    - id: "PY-PERF-002"
+      category: "performance"
+      priority: "medium"
+      description: "Avoid loading entire datasets into memory. Use generators, iterators, or streaming for large data processing."
+      remediation: "Use yield, itertools, or database cursors with fetchmany() instead of fetchall()."
+
+# ---------------------------------------------------------------------------
+# JAVASCRIPT
+# ---------------------------------------------------------------------------
+javascript:
+  applies_to:
+    languages: ["javascript"]
+  rules:
+    # -- Security --
+    - id: "JS-SEC-001"
+      category: "security"
+      priority: "critical"
+      description: "No hardcoded credentials, API keys, tokens, or secrets in source code or client-side bundles."
+      remediation: "Use environment variables (process.env), .env files excluded from version control, or a secrets manager."
+
+    - id: "JS-SEC-002"
+      category: "security"
+      priority: "critical"
+      description: "Prevent Cross-Site Scripting (XSS): never insert unsanitized user input into innerHTML, document.write(), or dangerouslySetInnerHTML."
+      remediation: "Use textContent for DOM insertion, or sanitize with DOMPurify before rendering HTML."
+
+    - id: "JS-SEC-003"
+      category: "security"
+      priority: "critical"
+      description: "Never use eval(), Function(), or setTimeout/setInterval with string arguments on untrusted data."
+      remediation: "Use JSON.parse() for data, and pass function references to setTimeout/setInterval."
+
+    - id: "JS-SEC-004"
+      category: "security"
+      priority: "high"
+      description: "Validate and sanitize all user input on the server side, even if client-side validation exists. Client-side validation is bypassable."
+      remediation: "Use joi, zod, or express-validator on the server for all input validation."
+
+    # -- Conventions --
+    - id: "JS-CONV-001"
+      category: "conventions"
+      priority: "low"
+      description: "Use camelCase for variables and functions, PascalCase for classes and React components, UPPER_SNAKE_CASE for constants."
+      remediation: "Rename identifiers to match JavaScript conventions."
+
+    - id: "JS-CONV-002"
+      category: "conventions"
+      priority: "low"
+      description: "Use strict equality (=== and !==) instead of loose equality (== and !=) to avoid type coercion bugs."
+      remediation: "Replace == with === and != with !==."
+
+    - id: "JS-CONV-003"
+      category: "conventions"
+      priority: "low"
+      description: "Use const by default, let when reassignment is needed. Never use var."
+      remediation: "Replace var declarations with const or let."
+
+    # -- Testing --
+    - id: "JS-TEST-001"
+      category: "testing"
+      priority: "high"
+      description: "New feature code must have at least 80% line coverage with functional tests. No mock frameworks allowed."
+      remediation: "Add functional tests using a real test server, real database, and real API calls."
+
+    # -- Error Handling --
+    - id: "JS-ERR-001"
+      category: "error_handling"
+      priority: "high"
+      description: "Always handle Promise rejections. Every async/await call must be in a try/catch or have a .catch() handler. Unhandled rejections crash Node.js."
+      remediation: "Wrap await calls in try/catch or chain .catch() on Promise calls."
+
+    # -- Performance --
+    - id: "JS-PERF-001"
+      category: "performance"
+      priority: "medium"
+      description: "Avoid synchronous blocking operations (fs.readFileSync, child_process.execSync) in server request handlers."
+      remediation: "Use async equivalents: fs.promises.readFile, child_process.exec with promisify."
+
+# ---------------------------------------------------------------------------
+# TYPESCRIPT
+# ---------------------------------------------------------------------------
+typescript:
+  applies_to:
+    languages: ["typescript"]
+  rules:
+    # -- Security (inherits JS-SEC-* via language overlap, these are TS-specific) --
+    - id: "TS-SEC-001"
+      category: "security"
+      priority: "critical"
+      description: "No hardcoded credentials, API keys, tokens, or secrets in source code or client-side bundles."
+      remediation: "Use environment variables with typed config objects, or a secrets manager."
+
+    - id: "TS-SEC-002"
+      category: "security"
+      priority: "critical"
+      description: "Prevent XSS: never insert unsanitized user input into innerHTML or dangerouslySetInnerHTML."
+      remediation: "Use textContent, sanitize with DOMPurify, or use framework-provided escaping."
+
+    # -- Type Safety --
+    - id: "TS-TYPE-001"
+      category: "type_safety"
+      priority: "high"
+      description: "Never use 'any' type. Use 'unknown' for truly unknown types and narrow with type guards."
+      remediation: "Replace 'any' with specific types, union types, generics, or 'unknown' with runtime checks."
+
+    - id: "TS-TYPE-002"
+      category: "type_safety"
+      priority: "high"
+      description: "Enable strict mode in tsconfig.json: strict: true (includes strictNullChecks, noImplicitAny, strictFunctionTypes)."
+      remediation: "Set \"strict\": true in tsconfig.json compilerOptions."
+
+    - id: "TS-TYPE-003"
+      category: "type_safety"
+      priority: "medium"
+      description: "Use discriminated unions instead of optional properties for mutually exclusive states. Avoid boolean flags that create invalid states."
+      remediation: "Model states as union types with a literal discriminant field."
+
+    # -- Conventions --
+    - id: "TS-CONV-001"
+      category: "conventions"
+      priority: "low"
+      description: "Use camelCase for variables/functions, PascalCase for classes/interfaces/types/enums, UPPER_SNAKE_CASE for constants."
+      remediation: "Rename identifiers to match TypeScript conventions."
+
+    # -- Testing --
+    - id: "TS-TEST-001"
+      category: "testing"
+      priority: "high"
+      description: "New feature code must have at least 80% line coverage with functional tests. No mock frameworks allowed."
+      remediation: "Add functional tests with real services. Use type-safe test utilities."
+
+    # -- Error Handling --
+    - id: "TS-ERR-001"
+      category: "error_handling"
+      priority: "high"
+      description: "Define typed error classes instead of throwing plain strings or generic Error. Use Result types for recoverable failures."
+      remediation: "Create custom error classes extending Error, or use a Result<T, E> pattern."
+
+# ---------------------------------------------------------------------------
+# GO
+# ---------------------------------------------------------------------------
+go:
+  applies_to:
+    languages: ["go"]
+  rules:
+    # -- Security --
+    - id: "GO-SEC-001"
+      category: "security"
+      priority: "critical"
+      description: "No hardcoded credentials, API keys, tokens, or secrets in source code."
+      remediation: "Use environment variables (os.Getenv), config files excluded from VCS, or a secrets manager."
+
+    - id: "GO-SEC-002"
+      category: "security"
+      priority: "critical"
+      description: "Use parameterized queries with database/sql placeholder syntax ($1, ?) — never concatenate user input into SQL strings."
+      remediation: "Use db.Query(\"SELECT * FROM users WHERE id = $1\", userID) with bind parameters."
+
+    - id: "GO-SEC-003"
+      category: "security"
+      priority: "high"
+      description: "Always validate and sanitize external input. Use struct tags with a validation library (go-playground/validator)."
+      remediation: "Add validate struct tags and call validator.Struct() on all request payloads."
+
+    # -- Conventions --
+    - id: "GO-CONV-001"
+      category: "conventions"
+      priority: "low"
+      description: "Follow Go conventions: exported names are PascalCase, unexported are camelCase. Package names are lowercase, single word, no underscores."
+      remediation: "Rename to follow Go naming conventions. Run gofmt."
+
+    - id: "GO-CONV-002"
+      category: "conventions"
+      priority: "medium"
+      description: "All code must pass go vet and staticcheck with zero warnings."
+      remediation: "Run go vet ./... and staticcheck ./... and fix all reported issues."
+
+    # -- Error Handling --
+    - id: "GO-ERR-001"
+      category: "error_handling"
+      priority: "high"
+      description: "Never ignore returned errors. Every function that returns an error must have the error checked. Do not use _ for error values."
+      remediation: "Check every error return: if err != nil { return fmt.Errorf(\"context: %w\", err) }."
+
+    - id: "GO-ERR-002"
+      category: "error_handling"
+      priority: "high"
+      description: "Wrap errors with context using fmt.Errorf(\"doing X: %w\", err) to build traceable error chains."
+      remediation: "Use %w verb in fmt.Errorf to wrap errors with context at each level."
+
+    # -- Testing --
+    - id: "GO-TEST-001"
+      category: "testing"
+      priority: "high"
+      description: "New feature code must have at least 80% line coverage with functional tests. No mock frameworks allowed."
+      remediation: "Use table-driven tests, testify/assert for assertions, and real services for integration tests."
+
+    # -- Performance --
+    - id: "GO-PERF-001"
+      category: "performance"
+      priority: "medium"
+      description: "Use context.Context for cancellation and timeout propagation. Pass context as the first parameter to functions doing I/O."
+      remediation: "Add ctx context.Context as the first parameter and propagate it through I/O call chains."
+
+# ---------------------------------------------------------------------------
+# FASTAPI (Framework)
+# ---------------------------------------------------------------------------
+fastapi:
+  applies_to:
+    frameworks: ["fastapi"]
+  rules:
+    - id: "FA-ARCH-001"
+      category: "architecture"
+      priority: "high"
+      description: "Use FastAPI Depends() for all shared resources — database sessions, auth, configuration, external clients. Never use module-level globals for stateful resources."
+      remediation: "Create dependency functions and inject via Depends() in route parameters."
+
+    - id: "FA-ARCH-002"
+      category: "architecture"
+      priority: "high"
+      description: "Use Pydantic BaseModel for all request bodies, response schemas, and configuration. Never accept raw dict or untyped JSON."
+      remediation: "Define Pydantic models for every request/response shape and use them as route parameter types."
+
+    - id: "FA-SEC-001"
+      category: "security"
+      priority: "critical"
+      description: "CORS must be configured with explicit allowed origins. Never use allow_origins=['*'] in production. Allow only specific, known frontend domains."
+      remediation: "Set allow_origins to a list of specific domains loaded from environment config."
+
+    - id: "FA-SEC-002"
+      category: "security"
+      priority: "critical"
+      description: "Protect sensitive endpoints with authentication middleware. Use OAuth2PasswordBearer or API key dependency for all non-public routes."
+      remediation: "Add security dependency via Depends(get_current_user) or Depends(verify_api_key) to protected routes."
+
+    - id: "FA-PERF-001"
+      category: "performance"
+      priority: "medium"
+      description: "Use async def for all route handlers that perform I/O (database, HTTP, file). Do not mix sync blocking calls inside async routes."
+      remediation: "Convert route handlers to async def and use async database drivers (asyncpg, motor) and async HTTP clients (httpx)."
+
+    - id: "FA-PERF-002"
+      category: "performance"
+      priority: "medium"
+      description: "Use connection pooling for database connections. Configure pool_size and max_overflow in SQLAlchemy create_engine or use asyncpg pool."
+      remediation: "Set pool_size=5, max_overflow=10 in engine config, or use asyncpg.create_pool()."
+
+# ---------------------------------------------------------------------------
+# DJANGO (Framework)
+# ---------------------------------------------------------------------------
+django:
+  applies_to:
+    frameworks: ["django"]
+  rules:
+    - id: "DJ-SEC-001"
+      category: "security"
+      priority: "critical"
+      description: "Never disable CSRF protection. Keep CsrfViewMiddleware enabled and use {% csrf_token %} in all POST forms. API views should use token-based auth instead of disabling CSRF."
+      remediation: "Use @csrf_protect or ensure CsrfViewMiddleware is in MIDDLEWARE. For APIs, use TokenAuthentication or JWT."
+
+    - id: "DJ-SEC-002"
+      category: "security"
+      priority: "critical"
+      description: "Set SECRET_KEY from environment variables, never hardcode it. Set DEBUG=False in production. Configure ALLOWED_HOSTS explicitly."
+      remediation: "Load SECRET_KEY from os.environ, set DEBUG=False, set ALLOWED_HOSTS to your domain list."
+
+    - id: "DJ-SEC-003"
+      category: "security"
+      priority: "critical"
+      description: "Use Django ORM for all database queries. Never use raw SQL with string formatting. If raw() is necessary, use parameterized queries."
+      remediation: "Use Model.objects.filter() instead of raw SQL. If raw() is needed, use params=[value] argument."
+
+    - id: "DJ-ARCH-001"
+      category: "architecture"
+      priority: "high"
+      description: "Keep business logic in models or service layers, not in views. Views should handle HTTP concerns only (parsing request, returning response)."
+      remediation: "Move business logic to model methods, managers, or a services.py module."
+
+    - id: "DJ-ARCH-002"
+      category: "architecture"
+      priority: "high"
+      description: "Use Django migrations for all schema changes. Never modify the database schema manually or with raw DDL."
+      remediation: "Run python manage.py makemigrations after model changes. Review generated migration before applying."
+
+    - id: "DJ-PERF-001"
+      category: "performance"
+      priority: "medium"
+      description: "Avoid N+1 query problems. Use select_related() for ForeignKey and OneToOne, prefetch_related() for ManyToMany and reverse ForeignKey."
+      remediation: "Add .select_related('field') or .prefetch_related('field') to querysets that access related objects."
+
+# ---------------------------------------------------------------------------
+# REACT (Framework)
+# ---------------------------------------------------------------------------
+react:
+  applies_to:
+    frameworks: ["react"]
+  rules:
+    - id: "RX-SEC-001"
+      category: "security"
+      priority: "critical"
+      description: "Never use dangerouslySetInnerHTML with unsanitized user input. If HTML rendering is required, sanitize with DOMPurify first."
+      remediation: "Use DOMPurify.sanitize(userInput) before passing to dangerouslySetInnerHTML, or avoid it entirely."
+
+    - id: "RX-SEC-002"
+      category: "security"
+      priority: "critical"
+      description: "Never store secrets, API keys, or tokens in client-side code, localStorage, or sessionStorage. Use httpOnly cookies for auth tokens."
+      remediation: "Move secrets to server-side. Store auth tokens in httpOnly, secure, sameSite cookies."
+
+    - id: "RX-ARCH-001"
+      category: "architecture"
+      priority: "high"
+      description: "Follow React hooks rules: only call hooks at the top level (never inside loops, conditions, or nested functions). Only call hooks from React function components or custom hooks."
+      remediation: "Move hook calls to the top level of the component function. Extract conditional logic below the hook calls."
+
+    - id: "RX-ARCH-002"
+      category: "architecture"
+      priority: "high"
+      description: "Components should be small and focused on one responsibility. Extract reusable UI into shared components. Keep business logic out of components — use custom hooks or service modules."
+      remediation: "Split large components. Move data fetching to custom hooks. Move business logic to utility modules."
+
+    - id: "RX-A11Y-001"
+      category: "accessibility"
+      priority: "high"
+      description: "All interactive elements must be keyboard accessible. Use semantic HTML (button, a, input) instead of div/span with onClick. Add aria-label for icon-only buttons."
+      remediation: "Replace <div onClick> with <button>. Add aria-label, role, and tabIndex where needed."
+
+    - id: "RX-A11Y-002"
+      category: "accessibility"
+      priority: "medium"
+      description: "All images must have meaningful alt text. Decorative images should have alt=''. Form inputs must have associated labels."
+      remediation: "Add alt attributes to <img>. Add <label htmlFor> for every <input>."
+
+    - id: "RX-PERF-001"
+      category: "performance"
+      priority: "medium"
+      description: "Avoid unnecessary re-renders. Use React.memo for expensive pure components, useMemo for expensive computations, and useCallback for callback props."
+      remediation: "Wrap expensive components in React.memo(). Use useMemo/useCallback where profiling shows wasted renders."
+
+# ---------------------------------------------------------------------------
+# POSTGRESQL (Data Store)
+# ---------------------------------------------------------------------------
+postgresql:
+  applies_to:
+    databases: ["postgresql", "postgres"]
+  rules:
+    - id: "PG-SEC-001"
+      category: "security"
+      priority: "critical"
+      description: "Always use parameterized queries or ORM methods. Never concatenate user input into SQL strings, even for table/column names."
+      remediation: "Use bind parameters ($1, %s) or ORM query builders. For dynamic identifiers, use a whitelist."
+
+    - id: "PG-SEC-002"
+      category: "security"
+      priority: "high"
+      description: "Use least-privilege database roles. Application should connect with a role that has only SELECT/INSERT/UPDATE/DELETE — not SUPERUSER, CREATEDB, or DROP."
+      remediation: "Create a dedicated application role with GRANT only on needed tables and operations."
+
+    - id: "PG-PERF-001"
+      category: "performance"
+      priority: "high"
+      description: "Add indexes on columns used in WHERE, JOIN, and ORDER BY clauses for tables expected to exceed 10,000 rows. Include foreign key columns."
+      remediation: "Add CREATE INDEX on frequently queried columns. Use EXPLAIN ANALYZE to verify index usage."
+
+    - id: "PG-PERF-002"
+      category: "performance"
+      priority: "high"
+      description: "Use connection pooling (PgBouncer, SQLAlchemy pool, asyncpg pool). Never open a new connection per request."
+      remediation: "Configure connection pool with appropriate pool_size (5-20) and max_overflow. Use pool_pre_ping for stale connection detection."
+
+    - id: "PG-PERF-003"
+      category: "performance"
+      priority: "medium"
+      description: "Avoid SELECT * in production queries. Select only the columns needed to reduce data transfer and allow covering indexes."
+      remediation: "Replace SELECT * with explicit column list: SELECT id, name, email FROM users."
+
+    - id: "PG-DATA-001"
+      category: "data_integrity"
+      priority: "high"
+      description: "Use database-level constraints (NOT NULL, UNIQUE, CHECK, FOREIGN KEY) to enforce data integrity. Do not rely solely on application-level validation."
+      remediation: "Add constraints in migrations. Use NOT NULL, UNIQUE, CHECK constraints, and FOREIGN KEY references."
+
+    - id: "PG-DATA-002"
+      category: "data_integrity"
+      priority: "high"
+      description: "Wrap multi-step data modifications in explicit transactions. Use SAVEPOINT for partial rollback in complex workflows."
+      remediation: "Use BEGIN/COMMIT/ROLLBACK or ORM transaction context managers for multi-statement operations."
+
+# ---------------------------------------------------------------------------
+# AWS (Cloud Platform)
+# ---------------------------------------------------------------------------
+aws:
+  applies_to:
+    cloud: ["aws"]
+  rules:
+    # -- IAM & Access --
+    - id: "AWS-IAM-001"
+      category: "security"
+      priority: "critical"
+      description: "Apply least-privilege principle for all IAM policies. Never use Action: '*' or Resource: '*' in production. Scope permissions to specific actions and ARNs."
+      remediation: "Define IAM policies with specific actions (s3:GetObject, dynamodb:Query) and specific resource ARNs."
+
+    - id: "AWS-IAM-002"
+      category: "security"
+      priority: "critical"
+      description: "Never embed AWS access keys (AKIA...) or secret keys in source code, environment variables on EC2, or container images. Use IAM roles for EC2/ECS/Lambda."
+      remediation: "Use IAM roles attached to compute resources. Use AWS STS AssumeRole for cross-account access."
+
+    - id: "AWS-IAM-003"
+      category: "security"
+      priority: "high"
+      description: "Enable MFA for all IAM users with console access. Require MFA for sensitive API actions via IAM policy conditions."
+      remediation: "Add aws:MultiFactorAuthPresent condition to IAM policies for sensitive operations."
+
+    # -- Encryption --
+    - id: "AWS-ENC-001"
+      category: "security"
+      priority: "critical"
+      description: "Enable encryption at rest for all data stores: S3 (SSE-S3 or SSE-KMS), RDS (encrypted storage), DynamoDB (encryption at rest), EBS (encrypted volumes)."
+      remediation: "Enable default encryption on S3 buckets, RDS instances, DynamoDB tables, and EBS volumes."
+
+    - id: "AWS-ENC-002"
+      category: "security"
+      priority: "critical"
+      description: "Enforce encryption in transit (TLS/HTTPS) for all services. S3 buckets must have a policy denying non-HTTPS requests. Use TLS 1.2+ for all API communications."
+      remediation: "Add S3 bucket policy with aws:SecureTransport condition. Use HTTPS endpoints for all SDK calls."
+
+    - id: "AWS-ENC-003"
+      category: "security"
+      priority: "high"
+      description: "Use AWS KMS customer-managed keys (CMK) for sensitive data. Rotate keys automatically. Never use hardcoded encryption keys."
+      remediation: "Create KMS CMK with automatic rotation. Reference key ARN in service encryption config."
+
+    # -- Networking --
+    - id: "AWS-NET-001"
+      category: "security"
+      priority: "high"
+      description: "Do not expose databases, caches, or internal services to the public internet. Place them in private subnets. Use VPC endpoints for AWS service access."
+      remediation: "Move data stores to private subnets. Use NAT Gateway for outbound internet. Use VPC endpoints for S3, DynamoDB."
+
+    - id: "AWS-NET-002"
+      category: "security"
+      priority: "high"
+      description: "Security groups must follow least-privilege: no inbound 0.0.0.0/0 except for public-facing load balancers on ports 80/443. Restrict SSH (22) to specific IPs."
+      remediation: "Scope security group ingress to specific CIDR blocks and ports. Use bastion hosts or SSM for server access."
+
+    # -- Logging & Monitoring --
+    - id: "AWS-LOG-001"
+      category: "observability"
+      priority: "high"
+      description: "Enable CloudTrail for all API activity logging. Enable VPC Flow Logs for network monitoring. Enable S3 access logging for sensitive buckets."
+      remediation: "Enable CloudTrail in all regions. Enable VPC Flow Logs on production VPCs. Enable S3 access logging."
+
+    - id: "AWS-LOG-002"
+      category: "observability"
+      priority: "medium"
+      description: "Use structured logging (JSON format) with CloudWatch Logs. Include request_id, user_id, action, and duration in all log entries."
+      remediation: "Use a structured logger (structlog, winston) that outputs JSON. Send to CloudWatch Logs via SDK or agent."
+

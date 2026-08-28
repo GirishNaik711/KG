@@ -1,0 +1,192 @@
+# =============================================================================
+# RAPIDS Domain Brief Schema
+# =============================================================================
+# A Domain Brief is curated functional/industry knowledge for one node of the
+# hierarchical industry-domain taxonomy. Each node lives at
+# domain-briefs/<industry>/[<sub-industry>/[<process-area>/[<process-step>/]]]/domain-brief.yaml
+#
+# When a project attaches an industry domain path (e.g.,
+# financial-services/commercial-banking/commercial-client-onboarding), the
+# loader merges the ancestor chain's fields into the leaf and injects a
+# summary into SessionStart context during research and analysis phases.
+#
+# Domain Briefs are the "what is the problem space" layer. They are orthogonal to:
+#   - activity-library/    — which activities to run (the procedure)
+#   - build-playbooks/     — how to build it well (engineering patterns)
+# =============================================================================
+
+id:
+  type: string
+  required: true
+  description: >
+    Full path separated by slashes, e.g.,
+    financial-services/commercial-banking/commercial-client-onboarding.
+
+parent_id:
+  type: string | null
+  required: true
+  description: >
+    Parent node's id, or null for a level-1 (industry) node.
+
+level:
+  type: integer
+  required: true
+  description: >
+    1 = industry, 2 = sub-industry, 3 = process area, 4 = process step.
+
+stub:
+  type: boolean
+  required: false
+  description: >
+    True when this node carries no own content — its rich sections (processes,
+    data_entities, regulations, common_patterns, glossary, typical_integrations,
+    kpis) are empty and it inherits everything from its parent chain via
+    ancestor-merge. Default false (absent). Stub nodes are STILL loadable by id
+    (load_node resolves them through inheritance), but they are EXCLUDED from
+    candidate enumeration/ranking (detector, classifier, and the /aah-discuss
+    Step 5.4 detection surface) so hollow options are never offered. Set to true
+    only until the node's own content is authored, then remove the flag.
+
+name:
+  type: string
+  required: true
+  description: Human-readable name for this node.
+
+description:
+  type: string
+  required: true
+  description: One-paragraph summary of what this node covers.
+
+typical_horizontals:
+  type: list[string]
+  required: false
+  description: >
+    Informational hint listing technology-domain horizontals commonly used
+    to build systems in this functional space (e.g., ai-infra-platforms,
+    ai-applications, data-pipelines). Not enforced; used for documentation
+    and UI hints only.
+
+keywords:
+  type: object
+  required: false
+  description: >
+    Keywords used by the offline detector to score this node against a
+    problem statement. strong=3pts, moderate=1pt.
+  properties:
+    strong:
+      type: list[string]
+    moderate:
+      type: list[string]
+
+sample_problem_statements:
+  type: list[string]
+  required: false
+  description: >
+    Example problem statements that should classify to this node. Useful
+    for detector calibration and UI hints.
+
+reference_frameworks:
+  type: list
+  required: false
+  description: >
+    Industry-standard frameworks, taxonomies, or regulatory standards
+    relevant to this node.
+  items:
+    name:
+      type: string
+      required: true
+    url:
+      type: string
+      required: false
+
+processes:
+  type: list
+  required: false
+  description: >
+    Business processes that fall within this node's scope.
+  items:
+    name:
+      type: string
+      required: true
+    steps:
+      type: list[string]
+      required: false
+      description: Ordered steps within the process.
+
+data_entities:
+  type: list
+  required: false
+  description: >
+    Logical data entities central to this node. Not database schemas —
+    just the core domain objects.
+  items:
+    name:
+      type: string
+      required: true
+    attributes:
+      type: list[string]
+      required: false
+
+glossary:
+  type: list
+  required: false
+  description: >
+    Domain-specific jargon with definitions.
+  items:
+    term:
+      type: string
+      required: true
+    definition:
+      type: string
+      required: true
+
+typical_integrations:
+  type: list[string]
+  required: false
+  description: >
+    External systems commonly integrated with when building in this space
+    (e.g., "Sanctions/PEP data providers (Dow Jones, Refinitiv)").
+
+regulations:
+  type: list
+  required: false
+  description: >
+    Regulatory or compliance considerations relevant to this node.
+  items:
+    name:
+      type: string
+      required: true
+    impact:
+      type: string
+      required: true
+      description: How this regulation shapes architecture or design decisions.
+
+kpis:
+  type: list[string]
+  required: false
+  description: Common success metrics for systems built in this space.
+
+common_patterns:
+  type: list
+  required: false
+  description: >
+    Functional/business patterns that work well in this domain (distinct
+    from tech patterns, which live in Build Playbooks).
+  items:
+    name:
+      type: string
+      required: true
+    description:
+      type: string
+      required: true
+    when_to_apply:
+      type: string
+      required: false
+    anti_patterns:
+      type: list[string]
+      required: false
+
+anti_patterns:
+  type: list[string]
+  required: false
+  description: Domain-level anti-patterns — things teams get wrong repeatedly.

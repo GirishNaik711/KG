@@ -1,0 +1,308 @@
+---
+name: rapids-demo
+description: >
+  Launch an interactive, multi-terminal demo of a RAPIDS project. Creates isolated git worktrees per
+  phase from tagged commits so each phase can be live-executed independently. Onboarding tab launches
+  Claude directly; every other phase tab shows the previous phase's artifacts and objective, then asks
+  confirmation before launching Claude with the phase command. Use whenever the user runs /rapids-demo,
+  /rapids:demo, wants to demo a RAPIDS project, present a live walkthrough, or clone a GitHub RAPIDS
+  repo for demo. Also triggers when the user passes a GitHub URL to the skill.
+---
+
+<objective>
+Present a RAPIDS project as a live, interactive demo. Each selected phase gets its own git worktree on an isolated branch with the correct project state — prior phases marked complete with real artifacts, current phase ready to execute from scratch. An onboarding terminal is always included as the first tab.
+</objective>
+
+<constraints>
+- Never modify the original project state, artifacts, or tracking files on the main branch.
+- Show all phases that have started (status "complete" or "in_progress"), let user pick which to demo.
+- Never expose internal block IDs (R1, A2, etc.) to the user.
+- Require `rich` Python library for the phase presenter. If missing, install it automatically via `pip install rich`.
+- Worktrees are created at `.claude/worktrees/` under the project directory.
+- Always create an onboarding worktree as the first terminal tab.
+- After demo, remind user to clean up worktrees.
+</constraints>
+
+<workflow>
+
+## Cleanup Mode (when --cleanup argument is passed)
+
+1. **Scan for worktrees**
+   First resolve the harness root (same as Demo Launch step 1 — use `pwd`, which is the harness root).
+   Store as `{harness_root}`. Then scan for demo worktrees across all known project locations:
+   ```bash
+   HARNESS="{harness_root}"
+   WORKSPACE_ROOT=$(python -c "import yaml; c=yaml.safe_load(open('$HARNESS/rapids-config.yaml')); print(c.get('workspace_root','../rapids-workspaces'))" 2>/dev/null || echo "../rapids-workspaces")
+   # Scan harness projects/
+   for d in "$HARNESS/projects"/*/; do
+     wt_dir="$d.claude/worktrees"
+     if [ -d "$wt_dir" ]; then
+       count=$(ls -1d "$wt_dir"/*/ 2>/dev/null | wc -l)
+       [ "$count" -gt 0 ] && echo "project:$(basename $d)|path:$d|count:$count"
+     fi
+   done
+   # Scan workspace projects
+   for ws in "$WORKSPACE_ROOT"/*/; do
+     for proj in "$ws"/*/; do
+       wt_dir="${proj}.claude/worktrees"
+       if [ -d "$wt_dir" ]; then
+         count=$(ls -1d "$wt_dir"/*/ 2>/dev/null | wc -l)
+         [ "$count" -gt 0 ] && echo "project:$(basename $proj)|path:$proj|count:$count"
+       fi
+     done
+   done
+   ```
+
+2. **Check if any worktrees exist**
+   If no worktrees are found, tell the user:
+   > No demo worktrees found. All projects are clean.
+
+   Then stop (do not continue to demo launch workflow).
+
+3. **Select project to clean up**
+   Use AskUserQuestion with one option per project that has worktrees:
+   - header: "Clean up"
+   - question: "Which project's demo worktrees do you want to remove?"
+   - multiSelect: false
+   - options: one per project with worktrees
+     - label: "{project_name}"
+     - description: "{count} worktree(s) found"
+
+4. **Run cleanup script**
+   Run via Bash:
+   ```
+   uvx --from aah python "{harness_root}/aah/core/demo/demo-worktree-cleanup.py" \
+     "{project_path}" {project_name}
+   ```
+
+5. **Confirm completion**
+   Tell the user:
+   > Cleaned up demo worktrees for {project_name}
+
+   Then STOP. Do not continue to the demo launch workflow.
+
+## Demo Launch Mode (default, when no --cleanup argument)
+
+> **Direct URL shortcut:** If the user invoked the skill with a GitHub URL as the argument
+> (starts with `https://` or `git@`), store it as `{github_url}` and jump directly to the
+> **"Clone from GitHub" sub-flow** below — skip steps 2 and 3.
+
+1. **Resolve harness root and check rich dependency**
+   `$CLAUDE_PROJECT_DIR` is not available as a shell environment variable when Claude runs Bash commands.
+   Resolve it once by reading the current working directory from the Bash tool:
+   ```bash
+   pwd
+   ```
+   The harness root is the directory containing `rapids-config.yaml` — walk up from `pwd` if needed,
+   or use the known path directly. Store this as `{harness_root}` and use it for all subsequent script calls.
+
+   Then check rich:
+   ```bash
+   uvx --from aah python -c "import rich" 2>/dev/null && echo "OK" || echo "MISSING"
+   ```
+   If MISSING, tell the user to reinstall the harness (`./installers/AAH-Dependency-Installer.sh`) and stop. Otherwise continue.
+
+2. **List projects**
+   Run both commands in a single Bash call to avoid two round-trips.
+   Uses `$TMPDIR` (macOS/Linux) or `$TEMP` (Windows), falling back to the harness `.claude/` folder:
+   ```bash
+   RAPIDS_TMP="${TMPDIR:-${TEMP:-{harness_root}/.claude}}"
+   uvx --from aah python "{harness_root}/aah/core/demo/demo-list-projects.py" > "$RAPIDS_TMP/rapids-status.txt" 2>&1 && \
+   uvx --from aah python "{harness_root}/aah/core/demo/demo-list-projects.py" --json > "$RAPIDS_TMP/rapids-projects.json" 2>&1
+   ```
+   Read the status file and display its full contents in a code block.
+   Read the JSON file to extract each project's `name`, `path`, `phase`, `workspace`, and `depth`.
+
+   The `path` field is an **absolute path** resolved by demo-list-projects.py:
+   - For harness projects: `{harness_root}/projects/{name}`
+   - For workspace projects: `{workspace_root}/{workspace}/{name}` (workspace_root comes from rapids-config.yaml)
+   - For legacy projects: `{harness_root}/.rapids/projects/{name}`
+
+3. **Select project**
+   From the JSON read in step 2, build the candidate list:
+   ```
+   demo_ready = [p for p in projects if p.has_tags == true]
+   ```
+
+   **If `demo_ready` is empty**: tell the user:
+   > No projects have demo tags yet. You can clone a RAPIDS project from GitHub to get started.
+
+   Then proceed directly to the **"Clone from GitHub" sub-flow** below. Stop if the user declines.
+
+   **Selection algorithm — AskUserQuestion supports max 4 options:**
+   Slot 4 is always reserved for "Clone from GitHub". Maximum 3 project options per question.
+
+   **Case A — 3 or fewer demo-ready projects:**
+   Single AskUserQuestion:
+   - header: "Select project to demo"
+   - multiSelect: false
+   - options: one per demo-ready project + "Clone from GitHub"
+     - label: "{project_name}"
+     - description: "Phase: {phase} | Workspace: {workspace}"
+   - last option: label: "Clone from GitHub", description: "Clone a RAPIDS project from a GitHub URL"
+
+   **Case B — More than 3 demo-ready projects (two-step selection):**
+   Step B1 — AskUserQuestion with one option per unique `workspace` (max 3) + "Clone from GitHub":
+   - header: "Select workspace"
+   - multiSelect: false
+   - options: one per distinct workspace that contains demo-ready projects (max 3) + "Clone from GitHub"
+
+   Step B2 — after user picks a workspace: AskUserQuestion with projects in that workspace (max 3) + "Clone from GitHub":
+   - header: "Select project to demo"
+   - multiSelect: false
+   - options: one per demo-ready project in the selected workspace + "Clone from GitHub"
+
+   If user picks "Clone from GitHub" at any point, proceed to the **"Clone from GitHub" sub-flow** below.
+
+   Otherwise store the selected project's `path` as `{project_path}` and `name` as `{project_name}`, then continue to Step 4.
+
+   ---
+   **"Clone from GitHub" sub-flow:**
+
+   **Step C1 — Get URL** (skip if already provided as a direct argument):
+   > Please paste the GitHub repository URL to clone (must be a RAPIDS project):
+
+   Read the user's reply as `{github_url}`. Determine `{workspace_root}` from `{harness_root}/rapids-config.yaml`.
+
+   **Step C2 — List remote branches:**
+   ```bash
+   uvx --from aah python "{harness_root}/aah/core/demo/demo-clone-repo.py" \
+     "{github_url}" --list-branches
+   ```
+   - On `success: false`: display the `error` field and stop.
+   - On `success: true`: read the `branches` list.
+
+   **Step C3 — Confirm branch (AskUserQuestion):**
+   - header: `"Select branch"`
+   - question: `"Which branch should be cloned for the demo?"`
+   - multiSelect: false
+   - options: one per branch from the `branches` list (max 4 options total; if more than 4 branches exist, show the first 3 and add a 4th option "Other — I'll type the branch name")
+   - Store the chosen branch as `{selected_branch}`; if user chose "Other", ask them to type the branch name
+
+   **Step C4 — Clone with the selected branch:**
+   ```bash
+   uvx --from aah python "{harness_root}/aah/core/demo/demo-clone-repo.py" \
+     "{github_url}" \
+     --branch "{selected_branch}" \
+     --workspace-root "{workspace_root}"
+   ```
+   - On `success: false`: display the `error` field and stop.
+
+   **Step C5 — Report readiness to the user:**
+
+   If `demo_ready: true`:
+   > ✓ **Ready for demo** — `{name}` cloned to `{path}` ({tag_count} demo tag(s) found).
+   > Continuing to phase selection…
+
+   Set `{project_path}` = `path` field, `{project_name}` = `name` field, then continue to Step 4.
+
+   If `demo_ready: false`:
+   > ✗ **Not ready for demo** — `{name}` was cloned successfully to `{path}`, but no demo tags were found on branch `{selected_branch}`.
+   > Run the RAPIDS phases on this project first (e.g. `/rapids-research`, `/rapids-analyze`, etc.) to generate demo tags, then re-run `/rapids-demo`.
+
+   Stop — do not continue to phase selection.
+   ---
+
+4. **Read project state**
+   Read `{project_path}/.rapids/manifest.yaml` to determine demoable phases.
+
+   `{project_path}` is the absolute path from step 3's JSON output — it already accounts for
+   whether the project lives in the harness `projects/` folder or in an external workspace.
+
+   Identify **demoable phases**: compare `completed_artifacts` list in manifest — any phase that
+   has at least one artifact entry (e.g., `research/recommendation-brief.md` means research is complete).
+   Also check `current_phase` — all phases before it are complete.
+
+   If no demoable phases exist, tell the user:
+   > This project has no executed phases to demo. Run `/rapids:continue` to execute phases first.
+   Then stop.
+
+4a. **Discover demo tags**
+   Run tag discovery to find tagged snapshots:
+   ```
+   uvx --from aah python "{harness_root}/aah/core/demo/demo-tag-discovery.py" \
+     "{project_path}"
+   ```
+   Read the JSON output. If `has_tags` is `true`, tags are available for tag-based worktrees.
+
+4b. **Determine worktree mode**
+   - If `has_tags` is `true` and at least one demoable phase has tags in the discovery output: use **tag-based mode**.
+   - If `has_tags` is `false` or no demoable phases have matching tags: error — tags are required.
+
+   For tag-based mode, build a `tag_map` (JSON object mapping phase -> best tag):
+   - Do NOT include **onboarding** in the tag_map — onboarding is a blank workspace directory, not a git worktree
+   - For each **demoable phase**: use the `best_default` tag for that phase from discovery output
+   - If a phase has no tag: omit it from tag_map (that phase cannot be demoed)
+
+5. **Select phases to demo**
+   Use AskUserQuestion with `multiSelect: true`, header: "Select phases to include in demo".
+
+   Build one option per demoable phase:
+   - label: "{Phase Name}" (e.g., "Research", "Analysis", "Plan")
+   - description: "Demo this phase"
+
+   Order options by phase sequence (R-A-P-I-D-S).
+
+5a. **Auto-select tags**
+   Always use the `best_default` tag from the discovery output for each selected phase.
+   Do NOT ask the user to choose tags — just use the best default automatically.
+
+6. **Create worktrees and launch demo**
+   Build the phase list as a comma-separated string from user's selections (e.g., `research,analysis,plan`).
+
+   Build the tag_map JSON string for the selected phases only (do NOT include onboarding). Example:
+   `{"research":"rapids/proj/onboarding","analysis":"rapids/proj/research/complete"}`
+
+   Run via Bash:
+   ```
+   uvx --from aah python "{harness_root}/aah/core/demo/demo-launcher.py" \
+     "{project_path}" \
+     "{phase_list}" \
+     --mode worktree \
+     --tag-map '{tag_map_json}'
+   ```
+
+   This will:
+   - Create a git worktree for onboarding + each selected phase under `.claude/worktrees/`
+   - Create worktrees from tagged commits (fast, exact state)
+   - Launch terminal tabs — one per worktree
+
+7. **Display navigation instructions**
+   > Opened {N+1} terminal tabs (including Onboarding) for: {phase list}.
+   >
+   > **Mode**: tag-based
+   >
+   > **Tab 1 — Onboarding**: Claude Code launches directly with the workspace initialization sequence: `/rapids-init-workspace demo-workspace` → `/rapids-new-project demo-app --stack python-fastapi` → `/rapids-research`.
+   >
+   > **Tab 2+ — Phase terminals**: Each shows the previous phase's summary, then asks:
+   > "Do you want to execute the {Phase} phase? (y/n)"
+   > Type `y` to launch Claude Code — it will run the phase-specific command automatically:
+   > - Research phase: `/rapids-research`
+   > - Analysis phase: `/rapids-analyze`
+   > - Plan phase: `/rapids-plan`
+   > - Implement phase: `/rapids-implement`
+   > - Deploy phase: `/aah-deploy`
+   > - Sustain phase: `/rapids-sustain`
+   >
+   > Walk through tabs left-to-right to demonstrate the full project lifecycle.
+   >
+   > **Cleanup**: When the demo is complete, run `/rapids-demo --cleanup` to remove worktrees.
+
+</workflow>
+
+<success_criteria>
+- Onboarding terminal launches Claude Code directly (not just opens a shell)
+- Each phase worktree has prior phases completed with real artifacts — not an empty repo
+- Onboarding worktree is a blank workspace directory — no project initialized, no git worktree
+- tag_map excludes onboarding; all other selected phases must have a `best_default` entry
+</success_criteria>
+
+<anti_patterns>
+- Running the demo on a project with no executed phases
+- Hardcoding phase selections instead of reading from manifest.yaml
+- Modifying any project files on the original branch during the demo
+- Exposing raw manifest.yaml content to the user
+- Forgetting to include the onboarding terminal
+- Leaving worktrees behind without cleanup instructions
+- Not running demo-tag-discovery.py before attempting worktree creation
+</anti_patterns>

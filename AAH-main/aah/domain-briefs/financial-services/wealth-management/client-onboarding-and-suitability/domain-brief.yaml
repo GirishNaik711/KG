@@ -1,0 +1,36 @@
+id: financial-services/wealth-management/client-onboarding-and-suitability
+parent_id: financial-services/wealth-management
+level: 3
+stub: true
+name: "Client Onboarding and Suitability"
+description: >
+  Wealth-management client onboarding with investment-suitability assessment under FINRA/SEC rules.
+
+typical_horizontals:
+  - ai-applications
+  - ai-infra-platforms
+
+keywords:
+  strong:
+    - "wealth onboarding"
+    - "suitability assessment"
+    - "investor profile"
+  moderate:
+    - "risk profile"
+    - "investment objectives"
+    - "accredited investor"
+
+sample_problem_statements: []
+
+# Stub node: regulations, processes, data_entities, glossary, typical_integrations,
+# kpis, and patterns are inherited from the parent chain. Populate fields below
+# to specialize this node.
+
+processes: []
+data_entities: []
+glossary: []
+typical_integrations: []
+regulations: []
+kpis: []
+common_patterns: []
+anti_patterns: []

@@ -1,0 +1,42 @@
+# app-services.yaml — Template
+# Declares every independently startable surface of the application, so the build
+# phase can boot the real app and hand it to the user for review.
+# One entry per process — a backend and a frontend are two entries.
+#
+# Written by:   /aah-build §7A step 1 — created ONCE, at the first boot (module 1)
+# Consumed by: /aah-build §7A steps 2-5 (start → health-probe → record → stop)
+# Path: .aah/build/app-services.yaml
+#
+# NOT a verification artifact — this is the build skill's own state, written with a
+# plain Write and committed. No gate reads it, and it carries no attestation.
+#
+# Env is NEVER supplied by the shell. `uv run --with python-dotenv` makes dotenv
+# importable and the framework loads `.env` itself. Never `source .env`.
+
+services:                                    # start order == declaration order (dependencies first)
+
+  - name: {service-name}                     # REQUIRED — short id; also the log filename. e.g. backend
+    cwd: {path-relative-to-project-dir}      # REQUIRED — "." is the repo root. e.g. frontend
+    command: {start-command}                 # REQUIRED — compose from the stack table in §7A step 1
+    health: {http-url}                       # REQUIRED — probed until it returns <500. e.g. http://127.0.0.1:5000/health
+
+# --- Worked example — delete the placeholder above and adapt ------------------
+#
+# services:
+#   - name: backend
+#     cwd: .
+#     command: uv run --with python-dotenv python -m flask --app backend.app run --port 5000 --no-reload
+#     health: http://127.0.0.1:5000/health
+#
+#   - name: frontend
+#     cwd: frontend
+#     command: npm run dev                   # Vite loads .env natively — add nothing
+#     health: http://127.0.0.1:5173
+#
+# Ports and health paths MUST come from the code that already fixes them —
+# vite.config.js, app.run(port=...), a hardcoded API base in the frontend —
+# never a convention default. If the frontend hardcodes an API origin, the
+# backend MUST bind that exact port or the app is broken.
+#
+# `--no-reload` on Flask is required: the reloader double-starts and orphans a
+# process that cannot be stopped by PID.

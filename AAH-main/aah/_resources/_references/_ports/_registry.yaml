@@ -1,0 +1,98 @@
+# =============================================================================
+# AAH PORTS — FRAMEWORK CATALOG
+#
+# Each entry is a POINTER + RULES only — what to
+# invoke (ref + type), where it plugs in (target + position + anchor), when it
+# fires (triggered_by), what it reads/writes (consumes/produces). The logic
+# lives in the thing `ref` names; that must exist separately for the port to
+# do work.
+#
+# Consumers:
+#   ports.executor init    — copies every `default` activity into the project's
+#                            .aah/port-registry.yaml.
+#   ports.executor compile — joins the discuss slug registry's activates[] ids
+#                            against this catalog and merges the fired ones in.
+#
+# impl_status:
+#   available — `ref` exists; the executor invokes it.
+#   stub      — `ref` not built yet; the executor never invokes it, hands it
+#               back as status: deferred-stub. Flip to `available` when the
+#               impl lands — no schema change.
+# =============================================================================
+
+schema_version: "2.0"
+
+# Frozen core spine — ports locate themselves RELATIVE to these nodes.
+spine_order: [init-project, discuss, architecture, plan, build, fix, deploy]
+
+# Anchor positions — for `within` activities only.
+node_anchors:
+  init-project: []
+  discuss:      []
+  architecture:
+    - name: post-module-map
+      description: >-
+        Immediately after module-map.yaml is written and confirmed by the user,
+        and BEFORE any architecture-doc generation or the review board runs.
+  plan:         []
+  build:        []
+  fix:          []
+  deploy:       []
+
+# Catalogue of available non-core activities-
+#   default — always fires when its target node runs, no discuss question;
+#             materialized into the project registry at `init`.
+#   discuss — a /aah-discuss mandated answer switches it on; merged into the
+#             project registry at `compile` (discuss Step 13).
+
+activities:
+
+  # UI/UX wireframe capture, woven into the architecture loop after modules are carved (so screens map to modules)
+  - id: ACT-UX
+    ref: aah-ux
+    type: skill
+    impl_status: available
+    target: architecture
+    position: within
+    anchor: post-module-map          # must be in node_anchors[architecture]
+    order: 10
+    depends_on: []
+    triggered_by:
+      type: discuss
+      slug_id: custom-ui-required
+      option: "yes"
+    consumes: ['.aah/discuss/project-intent.yaml', '.aah/architecture/module-map.yaml']
+    produces: ['.aah/architecture/applications_wireframes/README.md']
+
+  - id: ACT-BACKEND-PLATFORM-AGENTCORE
+    ref: aah-agentcore-conventions
+    type: skill
+    impl_status: available
+    target: architecture
+    position: within
+    anchor: post-module-map          # same anchor bucket as ACT-UX
+    order: 20
+    depends_on: [ACT-UX]              # runs after aah-ux is done
+    triggered_by:
+      type: discuss
+      slug_id: backend-compute-platform
+      option: agentcore-runtime
+    consumes: ['.aah/discuss/decision-registry.yaml', '.aah/architecture/module-map.yaml']
+    produces: ['.aah/architecture/backend-platform-conventions.md']
+
+  # Access / identity — runs before architecture.
+  - id: ACT-ACCESS
+    ref: aah-access
+    type: skill
+    impl_status: available
+    target: architecture
+    position: before
+    anchor: null
+    order: 10
+    depends_on: []
+    triggered_by:
+      type: discuss
+      slug_id: cloud-vs-local
+      option: "cloud"
+    consumes: []
+    produces: ['.aah/architecture/cloud-readiness.yaml'] # data-readiness.yaml + data-schema-snapshot.yaml only when Phase 2 runs

@@ -1,0 +1,15 @@
+schema_version: "1.0"
+regime: air-gapped
+trigger_signals:
+  - air gap
+  - air-gapped
+  - no internet
+  - isolated network
+  - classified network
+  - il4
+  - il5
+  - fedramp high
+
+mandates:
+  - mandate_id: CC-INFRA-AIRGAP-001
+    statement: "No outbound internet connectivity. All dependencies must be available offline."

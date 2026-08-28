@@ -1,0 +1,21 @@
+schema_version: "1.0"
+regime: hipaa
+trigger_signals:
+  - hipaa
+  - phi
+  - protected health
+  - healthcare
+  - patient data
+  - ehr
+  - hitech
+  - covered entity
+
+mandates:
+  - mandate_id: CC-HIPAA-001
+    statement: "PHI must not be transmitted to a model provider without a signed BAA."
+  - mandate_id: CC-HIPAA-002
+    statement: "PHI must not be used for model training without explicit BAA coverage."
+  - mandate_id: CC-HIPAA-003
+    statement: "Data stores containing PHI must be encrypted at rest and in transit (TLS 1.2+)."
+  - mandate_id: CC-HIPAA-004
+    statement: "Audit logs for PHI access must be immutable and retained for minimum 6 years."

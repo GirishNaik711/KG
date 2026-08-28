@@ -1,0 +1,115 @@
+---
+name: rapids-visualizer
+description: >
+  Launch the RAPIDS Visualizer Server in the background to view project artifacts via web browser.
+  Opens interactive dashboard with DAG viewer, brownfield intelligence, and knowledge base.
+  Use when the user wants to visualize RAPIDS artifacts, view the project dashboard, explore the DAG,
+  or inspect codebase intelligence. Triggers on: "visualize", "view dashboard", "open visualizer",
+  "start server", "/rapids-visualizer", or any request to see RAPIDS artifacts in a browser.
+---
+
+<objective>
+Launch the RAPIDS Visualizer Server in the background, providing a web-based interface to explore project artifacts including DAG dependencies, brownfield intelligence, feature specs, and knowledge base.
+</objective>
+
+<constraints>
+- Server must run in the background to avoid blocking the conversation
+- Must check if server is already running on the default port (8000)
+- Must provide the server URL to the user
+- Browser should auto-open to the dashboard
+- Server continues running even after skill completes
+- User can stop server with Ctrl+C in the background process or by closing the terminal
+</constraints>
+
+<workflow>
+
+## 1. Check if Server Already Running
+
+Check if port 8000 is already in use:
+
+```bash
+if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+    echo "✅ Server already running at http://localhost:8000"
+    echo "   Dashboard: http://localhost:8000/"
+    echo "   DAG Viewer: http://localhost:8000/utilities/dag-viewer.html"
+    exit 0
+fi
+```
+
+## 2. Launch Server in Background
+
+If not running, launch the visualizer server:
+
+```bash
+aah run core.visualizer.server &
+SERVER_PID=$!
+echo "🚀 RAPIDS Visualizer Server launched in background"
+echo "   PID: $SERVER_PID"
+echo "   URL: http://localhost:8000"
+echo ""
+echo "   Dashboard:     http://localhost:8000/"
+echo "   DAG Viewer:    http://localhost:8000/utilities/dag-viewer.html"
+echo "   Brownfield:    http://localhost:8000/utilities/brownfield-viewer.html"
+echo "   Knowledge:     http://localhost:8000/utilities/knowledge-base-viewer.html"
+echo ""
+echo "   Browser should open automatically!"
+echo ""
+echo "   To stop: kill $SERVER_PID"
+```
+
+**Important:** Use `run_in_background: true` when calling the Bash tool so the server keeps running after the skill completes.
+
+## 3. Wait for Server Startup
+
+Give the server a moment to start:
+
+```bash
+sleep 2
+echo "✅ Server ready!"
+```
+
+## 4. Verify Server is Running
+
+Optional verification:
+
+```bash
+if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+    echo "✅ Server confirmed running on port 8000"
+else
+    echo "⚠️  Server may still be starting up..."
+fi
+```
+
+</workflow>
+
+<examples>
+
+## Example 1: Basic Launch
+
+**User:** "visualize the project"
+
+**Assistant:** Launches the visualizer server in the background and provides URLs to access the dashboard.
+
+## Example 2: Already Running
+
+**User:** "open the visualizer"
+
+**Assistant:** Detects server is already running on port 8000 and provides the existing URLs.
+
+## Example 3: Custom Port (Future)
+
+If port 8000 is busy, the user can manually specify:
+```bash
+aah run core.visualizer.server --port 9000 &
+```
+
+</examples>
+
+<notes>
+- The server runs indefinitely in the background
+- All artifacts are served fresh with no-cache headers
+- Config is generated dynamically (no manual editing needed)
+- Directory fallbacks handle both `.knowledge/` and `knowledge/` naming
+- Changes to artifacts appear immediately on browser refresh (F5)
+- Server output is suppressed (clean terminal)
+</notes>

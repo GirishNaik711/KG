@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RAPIDS Frontend Configuration Schema",
+  "description": "Schema for RAPIDS frontend configuration file",
+  "type": "object",
+  "required": ["version", "project", "paths"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the config format"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this configuration"
+    },
+    "project": {
+      "type": "object",
+      "required": ["workspace_root"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Display name of the project"
+        },
+        "workspace_root": {
+          "type": "string",
+          "description": "Path to workspace root directory"
+        },
+        "active_workspace": {
+          "type": "string",
+          "description": "Active workspace name"
+        },
+        "active_project": {
+          "type": "string",
+          "description": "Active project name within workspace"
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "description": "Paths to RAPIDS artifacts. Supports placeholders: {workspace_root}, {active_workspace}, {active_project}, {wave}",
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "file": { "type": "string" },
+              "dir": { "type": "string" },
+              "auto_load": { "type": "boolean" }
+            }
+          },
+          { "type": "string" }
+        ]
+      }
+    },
+    "ui": {
+      "type": "object",
+      "properties": {
+        "theme": {
+          "type": "string",
+          "enum": ["light", "dark"],
+          "default": "light"
+        },
+        "auto_layout": {
+          "type": "boolean",
+          "default": true
+        },
+        "show_upload_gate": {
+          "type": "boolean",
+          "default": false,
+          "description": "If false, skip upload gate and auto-load from config paths"
+        },
+        "enable_local_storage": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "features": {
+      "type": "object",
+      "description": "Feature flags for UI components",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "enabled": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

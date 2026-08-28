@@ -1,0 +1,302 @@
+# =============================================================================
+# RAPIDS Industry-Domain Taxonomy
+# =============================================================================
+# Hierarchical index of all Domain Briefs. Every node referenced here must
+# have a corresponding domain-brief.yaml file at the path implied by its id.
+#
+# Structure: industry (L1) → sub-industry (L2) → process-area (L3) → process-step (L4).
+# Nodes can exist at any level; not every branch reaches L4.
+#
+# The loader uses this index to:
+#   1. Resolve a node id to a filesystem path
+#   2. Walk ancestors for inheritance merging
+#   3. Enumerate all leaf candidates for the offline detector
+# =============================================================================
+
+# NOTE: per-node `description` + `keywords` below are an index CACHE lifted
+# from each node's domain-brief.yaml, used for fast candidate matching. The
+# authoritative content is always the brief itself (load via load_node).
+taxonomy_version: "1.0"
+last_updated: "2026-04-20"
+
+industries:
+  - id: financial-services
+    file: financial-services/domain-brief.yaml
+    description: "The financial services industry — banking, lending, payments, investment management, insurance, and capital markets. This is the root node for the financial-services vertical. Its content is inherited by every descendant node via the merge-from-ancestors rule."
+    keywords:
+      strong:
+        - "financial services"
+        - "banking"
+        - "fintech"
+        - "capital markets"
+      moderate:
+        - "bank"
+        - "finance"
+        - "financial"
+        - "lending"
+        - "payments"
+        - "insurance"
+    children:
+
+      - id: financial-services/retail-banking
+        file: financial-services/retail-banking/domain-brief.yaml
+        stub: true
+        description: "Banking products and services for individual consumers: checking/savings accounts, consumer loans, credit cards, mortgages, digital banking channels."
+        keywords:
+          strong:
+            - "retail banking"
+            - "consumer banking"
+          moderate:
+            - "personal banking"
+            - "consumer loan"
+            - "credit card"
+            - "mortgage"
+        children:
+
+          - id: financial-services/retail-banking/deposit-account-origination
+            file: financial-services/retail-banking/deposit-account-origination/domain-brief.yaml
+            stub: true
+            description: "End-to-end opening of deposit products (checking, savings, CDs) for individual consumers — identity verification, KYC, funding, and account activation."
+            keywords:
+              strong:
+                - "deposit account"
+                - "checking account"
+                - "savings account"
+                - "account opening"
+              moderate:
+                - "retail onboarding"
+                - "digital account"
+                - "new account"
+            children:
+
+              - id: financial-services/retail-banking/deposit-account-origination/account-application
+                file: financial-services/retail-banking/deposit-account-origination/account-application/domain-brief.yaml
+                stub: true
+                description: "The application-capture step: collecting applicant personal info, product selection, and initial funding details."
+                keywords:
+                  strong:
+                    - "account application"
+                  moderate:
+                    - "apply for account"
+                    - "application form"
+
+      - id: financial-services/commercial-banking
+        file: financial-services/commercial-banking/domain-brief.yaml
+        stub: true
+        description: "Banking products and services for commercial (non-retail) clients — businesses, corporations, institutions. Covers lending, deposits, treasury, trade finance, and payments for legal entities."
+        keywords:
+          strong:
+            - "commercial banking"
+            - "corporate banking"
+            - "business banking"
+          moderate:
+            - "commercial client"
+            - "business account"
+            - "corporate client"
+            - "commercial loan"
+        children:
+
+          - id: financial-services/commercial-banking/commercial-client-onboarding
+            file: financial-services/commercial-banking/commercial-client-onboarding/domain-brief.yaml
+            description: "End-to-end onboarding of commercial (non-retail) clients at a bank or financial institution: legal entity verification, KYB / KYC / AML due diligence, beneficial ownership discovery, sanctions and adverse-media screening, risk rating, account and product setup, and credential provisioning. This process typically spans multiple systems (core banking, CRM, screening providers, corporate registries) and requires durable audit trails for regulatory examination."
+            keywords:
+              strong:
+                - "commercial onboarding"
+                - "commercial client onboarding"
+                - "kyb"
+                - "entity verification"
+                - "beneficial owner"
+                - "ubo"
+                - "corporate onboarding"
+              moderate:
+                - "client onboarding"
+                - "corporate account"
+                - "due diligence"
+                - "aml"
+                - "sanctions screening"
+                - "adverse media"
+                - "onboarding workflow"
+                - "case-based onboarding"
+            children:
+
+              - id: financial-services/commercial-banking/commercial-client-onboarding/kyb-due-diligence
+                file: financial-services/commercial-banking/commercial-client-onboarding/kyb-due-diligence/domain-brief.yaml
+                description: "The Know Your Business due-diligence phase of commercial onboarding: verifying the legal entity's legitimacy, screening the entity and its related parties against sanctions/PEP/adverse-media sources, and producing a documented due-diligence package sufficient to support the downstream risk rating and approval decisions."
+                keywords:
+                  strong:
+                    - "kyb"
+                    - "due diligence"
+                    - "sanctions screening"
+                    - "pep screening"
+                    - "adverse media"
+                  moderate:
+                    - "know your business"
+                    - "screening"
+                    - "ofac"
+                    - "sanctions hit"
+
+              - id: financial-services/commercial-banking/commercial-client-onboarding/ubo-discovery
+                file: financial-services/commercial-banking/commercial-client-onboarding/ubo-discovery/domain-brief.yaml
+                description: "Ultimate Beneficial Owner discovery: resolving the ownership chain of a commercial customer entity through parent companies, holding structures, and trust arrangements to identify the natural persons who ultimately own or control the customer. Driven by the FinCEN CDD Rule and parallel international requirements."
+                keywords:
+                  strong:
+                    - "ubo"
+                    - "ubo discovery"
+                    - "beneficial owner"
+                    - "ownership chain"
+                    - "beneficial ownership"
+                  moderate:
+                    - "ownership"
+                    - "parent company"
+                    - "holding structure"
+                    - "control person"
+                    - "25% threshold"
+
+              - id: financial-services/commercial-banking/commercial-client-onboarding/risk-rating
+                file: financial-services/commercial-banking/commercial-client-onboarding/risk-rating/domain-brief.yaml
+                description: "Computing a money-laundering / financial-crime risk tier for a commercial client based on KYB inputs: entity type, industry, geography, ownership complexity, PEP exposure, product usage, and channel. The rating drives approval routing, ongoing-monitoring cadence, and EDD requirements."
+                keywords:
+                  strong:
+                    - "risk rating"
+                    - "customer risk rating"
+                    - "kyc risk tier"
+                    - "risk scoring"
+                  moderate:
+                    - "risk tier"
+                    - "aml risk"
+                    - "risk model"
+                    - "customer risk assessment"
+
+              - id: financial-services/commercial-banking/commercial-client-onboarding/account-setup
+                file: financial-services/commercial-banking/commercial-client-onboarding/account-setup/domain-brief.yaml
+                description: "Post-approval account and product provisioning: creating entity and relationship records in CRM, provisioning deposit / loan / treasury products in core banking, linking authorized signatories with authority levels, and configuring transaction limits and entitlements."
+                keywords:
+                  strong:
+                    - "account setup"
+                    - "product provisioning"
+                    - "core banking"
+                    - "account opening"
+                  moderate:
+                    - "entitlements"
+                    - "authority levels"
+                    - "deposit account"
+                    - "signatory setup"
+
+              - id: financial-services/commercial-banking/commercial-client-onboarding/credential-provisioning
+                file: financial-services/commercial-banking/commercial-client-onboarding/credential-provisioning/domain-brief.yaml
+                description: "Issuing digital access for the newly onboarded commercial client: digital banking credentials for authorized users, MFA enrollment, API credentials and tokens for treasury / ACH / wire integration, and welcome communications that convey access securely."
+                keywords:
+                  strong:
+                    - "credential provisioning"
+                    - "mfa enrollment"
+                    - "digital banking credentials"
+                    - "api credentials"
+                  moderate:
+                    - "secure onboarding"
+                    - "user provisioning"
+                    - "token issuance"
+                    - "welcome package"
+
+          - id: financial-services/commercial-banking/credit-origination
+            file: financial-services/commercial-banking/credit-origination/domain-brief.yaml
+            stub: true
+            description: "End-to-end origination of commercial credit facilities — application, underwriting, risk assessment, approval, and documentation."
+            keywords:
+              strong:
+                - "credit origination"
+                - "loan underwriting"
+                - "commercial loan origination"
+              moderate:
+                - "credit application"
+                - "underwriting"
+                - "loan approval"
+
+          - id: financial-services/commercial-banking/treasury-management
+            file: financial-services/commercial-banking/treasury-management/domain-brief.yaml
+            stub: true
+            description: "Corporate treasury services: cash management, liquidity, FX, payments, receivables, and working-capital solutions for commercial clients."
+            keywords:
+              strong:
+                - "treasury management"
+                - "cash management"
+                - "corporate treasury"
+              moderate:
+                - "treasury services"
+                - "liquidity"
+                - "working capital"
+
+      - id: financial-services/accounting-finance
+        file: financial-services/accounting-finance/domain-brief.yaml
+        stub: true
+        description: "Corporate accounting, financial reporting, and finance operations including general ledger management, consolidation (FCCS/HFM), intercompany accounting, close processes, and regulatory financial reporting. Covers ERP-to-consolidation data flows across Oracle, SAP ECC, SAP S/4HANA, and Hyperion/FCCS systems."
+        keywords:
+          strong:
+            - "general ledger"
+            - "financial consolidation"
+            - "FCCS"
+            - "chart of accounts"
+            - "journal entries"
+            - "close process"
+            - "financial reporting"
+          moderate:
+            - "ERP integration"
+            - "SAP finance"
+            - "Oracle GL"
+            - "intercompany"
+            - "statutory reporting"
+            - "US GAAP"
+            - "IFRS"
+        children:
+
+          - id: financial-services/accounting-finance/gl-reconciliation
+            file: financial-services/accounting-finance/gl-reconciliation/domain-brief.yaml
+            description: "Automated reconciliation of General Ledger data across multiple ERP source systems (Oracle R12, SAP ECC, SAP S/4HANA) against financial consolidation systems (FCCS/HFM). Compares GL closing balances at the intersection of Legal Entity × Site × GL Account × Period to identify variances caused by timing differences, FX translation, rounding, or genuine mismatches."
+            keywords:
+              strong:
+                - "GL reconciliation"
+                - "general ledger variance"
+                - "GL vs FCCS"
+                - "reconciliation variance"
+                - "balance reconciliation"
+                - "closing balance comparison"
+                - "intercompany reconciliation"
+                - "GL union model"
+              moderate:
+                - "medallion architecture"
+                - "Bronze Silver Gold"
+                - "star schema reconciliation"
+                - "variance analysis dashboard"
+                - "period close reconciliation"
+                - "functional vs group currency"
+                - "FX translation variance"
+                - "SCD-2 dimensions"
+                - "harmonized code block"
+
+      - id: financial-services/wealth-management
+        file: financial-services/wealth-management/domain-brief.yaml
+        stub: true
+        description: "Investment management, financial planning, and advisory services for individual high-net-worth clients."
+        keywords:
+          strong:
+            - "wealth management"
+            - "private banking"
+            - "financial advisor"
+          moderate:
+            - "advisory"
+            - "portfolio management"
+            - "investment advice"
+        children:
+
+          - id: financial-services/wealth-management/client-onboarding-and-suitability
+            file: financial-services/wealth-management/client-onboarding-and-suitability/domain-brief.yaml
+            stub: true
+            description: "Wealth-management client onboarding with investment-suitability assessment under FINRA/SEC rules."
+            keywords:
+              strong:
+                - "wealth onboarding"
+                - "suitability assessment"
+                - "investor profile"
+              moderate:
+                - "risk profile"
+                - "investment objectives"
+                - "accredited investor"

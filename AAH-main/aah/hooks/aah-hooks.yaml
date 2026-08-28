@@ -1,0 +1,183 @@
+# Host-agnostic RAPIDS hook definitions.
+# Generated from the original .claude/settings.json hooks block; edit here,
+# then `aah install` re-renders the host-native block. See aah/hooks/transpile.py.
+
+hooks:
+  SessionStart:
+  - matcher: startup|resume
+    run_hooks:
+    - cli: setup
+      args: --quiet
+      timeout: 60
+      statusMessage: Refreshing aah skills/agents/hooks (aah setup)...
+    - run: core.build.run_init_check
+      skip_if_delegated: true
+      timeout: 30
+      statusMessage: Running init.sh health check...
+    - run: core.build.load_impl_context
+      skip_if_delegated: true
+      timeout: 15
+      statusMessage: Loading project context...
+    - run: core.git_ops.cleanup_worktrees
+      args: clean
+      timeout: 15
+      statusMessage: Cleaning up orphaned worktrees...
+    - run: core.git_ops.ensure_merge_drivers
+      timeout: 10
+      statusMessage: Registering git merge drivers...
+    - run: core.build.regenerate_attestation_secret
+      skip_if_delegated: true
+      timeout: 5
+      statusMessage: Ensuring attestation key...
+  UserPromptExpansion:
+  - matcher: aah
+    run_hooks:
+    - run: core.branding.welcome
+      args: --hook-expansion
+      timeout: 5
+      statusMessage: "✦ AAH — Ascend Agentic Harness ✦"
+  PreToolUse:
+  - matcher: Skill
+    run_hooks:
+    - run: core.branding.welcome
+      args: --hook
+      timeout: 5
+      statusMessage: "✦ AAH — Ascend Agentic Harness ✦"
+  - matcher: Read|Write|Edit|Bash
+    run_hooks:
+    - run: core.guards.secrets_guard
+      skip_if_delegated: true
+      timeout: 8
+  - matcher: Bash
+    run_hooks:
+    - run: core.guards.no_mocks_guard
+      skip_if_delegated: true
+      timeout: 8
+    - run: core.guards.security_scan_guard
+      skip_if_delegated: true
+      timeout: 8
+    - run: core.guards.secrets_commit_guard
+      skip_if_delegated: true
+      timeout: 8
+    - run: core.guards.dependency_license_guard
+      skip_if_delegated: true
+      timeout: 60
+    - run: core.guards.dependency_policy_guard
+      skip_if_delegated: true
+      timeout: 60
+    - run: core.guards.package_existence_guard
+      skip_if_delegated: true
+      timeout: 30
+  - matcher: Write
+    run_hooks:
+    - run: core.guards.validate_aah_path
+      skip_if_delegated: true
+    - run: core.gates.validate_feature_list
+      skip_if_delegated: true
+      if: Write(*feature-list.json*)
+  # v2 (lean/TDD): the codemap context-discovery gate is removed. The lean
+  # feature-implementer reconstitutes context by reading Dependencies' code +
+  # CLAUDE.md, not via a mandatory codemap query, so there is nothing to gate.
+  - matcher: Write|Edit|MultiEdit
+    run_hooks:
+    - run: core.guards.verification_artifact_guard
+      skip_if_delegated: true
+      if: Write(**/.aah/build/test-results/**)|Write(**/.aah/build/runtime-results/**)|Write(**/.aah/build/quality-results/**)|Write(**/.aah/build/checkpoint-results/**)|Write(**/.aah/build/validation-results/**)|Edit(**/.aah/build/test-results/**)|Edit(**/.aah/build/runtime-results/**)|Edit(**/.aah/build/quality-results/**)|Edit(**/.aah/build/checkpoint-results/**)|Edit(**/.aah/build/validation-results/**)|MultiEdit(**/.aah/build/test-results/**)|MultiEdit(**/.aah/build/runtime-results/**)|MultiEdit(**/.aah/build/quality-results/**)|MultiEdit(**/.aah/build/checkpoint-results/**)|MultiEdit(**/.aah/build/validation-results/**)
+  PostToolUse:
+  - matcher: Bash|Write|Edit
+    run_hooks:
+    - run: core.guards.execution_risk_monitor
+      skip_if_delegated: true
+      timeout: 8
+  - matcher: Write|Edit
+    run_hooks:
+    - run: core.guards.validate_artifact_template
+      skip_if_delegated: true
+    - run: core.intel.check_intel_update
+      skip_if_delegated: true
+      timeout: 5
+    - run: core.hooks.sync_feature_md
+      skip_if_delegated: true
+      timeout: 10
+  - matcher: Bash
+    run_hooks:
+    - run: core.logging.log_test_results
+      skip_if_delegated: true
+  - matcher: Write|Edit|MultiEdit
+    run_hooks:
+    - run: core.guards.mock_data_consistency_guard
+      skip_if_delegated: true
+      if: Write(**/mock*.json)|Write(**/fixtures*.json)|Write(**/seed*.json)|Write(**/test-data/**.json)|Edit(**/mock*.json)|Edit(**/fixtures*.json)|Edit(**/seed*.json)|Edit(**/test-data/**.json)|MultiEdit(**/mock*.json)|MultiEdit(**/fixtures*.json)|MultiEdit(**/seed*.json)|MultiEdit(**/test-data/**.json)
+    - run: core.guards.circular_import_guard
+      skip_if_delegated: true
+      if: Write(**/*.py)|Write(**/*.ts)|Write(**/*.tsx)|Write(**/*.js)|Write(**/*.jsx)|Write(**/*.mjs)|Write(**/*.cjs)|Edit(**/*.py)|Edit(**/*.ts)|Edit(**/*.tsx)|Edit(**/*.js)|Edit(**/*.jsx)|Edit(**/*.mjs)|Edit(**/*.cjs)|MultiEdit(**/*.py)|MultiEdit(**/*.ts)|MultiEdit(**/*.tsx)|MultiEdit(**/*.js)|MultiEdit(**/*.jsx)|MultiEdit(**/*.mjs)|MultiEdit(**/*.cjs)
+  Stop:
+  - run_hooks:
+    - run: core.build.generate_session_summary
+      skip_if_delegated: true
+    # Fires on every turn stop so users see live token spend during the
+    # session. Multi-fire safe: update_cumulative_usage does replace-on-write
+    # keyed by session_id and rebuilds all aggregates from sessions[] after
+    # each write, so 20 fires of the same session produce the same file as
+    # firing once at session close.
+    - run: core.logging.activity_logger
+      skip_if_delegated: true
+      args: log-session
+    - run: core.gates.validate_security_scan
+      skip_if_delegated: true
+      statusMessage: Checking security scan status...
+    - run: core.guards.execution_risk_monitor
+      skip_if_delegated: true
+      args: cleanup
+  # SessionEnd fires ONCE per real session termination. Kept as a belt-and-
+  # suspenders fire so the file has its final state even if a Stop fire is
+  # missed for any reason.
+  SessionEnd:
+  - run_hooks:
+    - run: core.logging.activity_logger
+      skip_if_delegated: true
+      args: log-session
+  SubagentStart:
+  - matcher: aah-feature-implementer
+    run_hooks:
+    - run: core.build.load_impl_context
+      args: --subagent
+  - matcher: aah-qa-evaluator
+    run_hooks:
+    - run: core.build.load_impl_context
+      args: --evaluator
+  SubagentStop:
+  - matcher: aah-feature-implementer
+    run_hooks:
+    # Verify the implementer left the shared build worktree clean and committed.
+    - run: core.git_ops.check_clean_git
+    # v2 (lean/TDD): expertise capture is removed (no expertise system), and the
+    # per-feature worktree cleanup is removed — the build is sequential in ONE
+    # shared worktree that must survive between modules, so cleaning it up after
+    # each module would destroy the next module's build environment.
+  - matcher: aah-qa-evaluator
+    run_hooks:
+    - run: core.logging.log_test_results
+      args: --evaluator
+  - matcher: security-scanner
+    run_hooks:
+    - run: core.logging.log_test_results
+      args: --security-scanner
+  TaskCompleted:
+  - run_hooks:
+    - run: core.gates.validate_feature_complete
+      skip_if_delegated: true
+    - run: core.gates.validate_standards_check
+      skip_if_delegated: true
+  TeammateIdle:
+  - run_hooks:
+    - run: core.gates.validate_regression_pass
+      skip_if_delegated: true
+    - run: core.gates.security_scan_warning
+      skip_if_delegated: true
+      statusMessage: Checking security scan status...
+  PreCompact:
+  - run_hooks:
+    - run: core.common.progress
+      skip_if_delegated: true
+      args: snapshot

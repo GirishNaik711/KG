@@ -1,0 +1,273 @@
+id: financial-services/accounting-finance/gl-reconciliation
+parent_id: financial-services/accounting-finance
+level: 3
+name: General Ledger Reconciliation
+description: >
+  Automated reconciliation of General Ledger data across multiple ERP source
+  systems (Oracle R12, SAP ECC, SAP S/4HANA) against financial consolidation
+  systems (FCCS/HFM). Compares GL closing balances at the intersection of
+  Legal Entity × Site × GL Account × Period to identify variances caused by
+  timing differences, FX translation, rounding, or genuine mismatches.
+
+typical_horizontals:
+  - data-pipelines
+  - data-modernization
+  - ai-applications
+
+keywords:
+  strong:
+    - GL reconciliation
+    - general ledger variance
+    - GL vs FCCS
+    - reconciliation variance
+    - balance reconciliation
+    - closing balance comparison
+    - intercompany reconciliation
+    - GL union model
+  moderate:
+    - medallion architecture
+    - Bronze Silver Gold
+    - star schema reconciliation
+    - variance analysis dashboard
+    - period close reconciliation
+    - functional vs group currency
+    - FX translation variance
+    - SCD-2 dimensions
+    - harmonized code block
+
+sample_problem_statements:
+  - "Build a GL Reconciliation application that compares General Ledger balances from Oracle, SAP ECC, and SAP S/4 against FCCS consolidation data"
+  - "We need to identify and report variances between our source GL systems and the financial consolidation platform"
+  - "Create a dashboard showing reconciliation status across all legal entities and periods with drilldown to individual transactions"
+  - "Automate the monthly close reconciliation between ERP general ledgers and HFM/FCCS"
+  - "Build a data pipeline that harmonizes GL data from 4 source systems into a unified reconciliation model"
+
+reference_frameworks:
+  - name: Finance Data Hub (FDH) Pattern
+    url: null
+  - name: Medallion Architecture (Bronze/Silver/Gold)
+    url: https://www.databricks.com/glossary/medallion-architecture
+  - name: Star Schema for Financial Data
+    url: null
+  - name: BIAN (Banking Industry Architecture Network)
+    url: https://bian.org
+  - name: US GAAP (ASC 830 — Foreign Currency)
+    url: null
+
+processes:
+  - name: Source Data Extraction
+    steps:
+      - Extract GL Journal Entry Headers and Lines from Oracle R12
+      - Extract ZhyperA (line items) and ZhyperT (balances) from SAP ECC
+      - Extract ZIFIGLACCTLIR and IFIJOURNALENT from SAP S/4HANA CDS views
+      - Extract FCCS Base Periodic and YTD data
+      - Extract consolidated data (PATH8CONS, LPATH8CONS, NEWSEGMENTSCONS)
+      - Stage all source files in internal Snowflake stages
+
+  - name: Bronze Layer Load
+    steps:
+      - TRUNCATE + COPY INTO for all 24 source tables
+      - Inject audit columns (_LOADED_AT, _SOURCE_FILE, _ROW_NUMBER)
+      - Log load metrics to ORCHESTRATION.LOAD_LOG
+      - Validate row counts against expected minimums
+
+  - name: Silver Layer Processing
+    steps:
+      - Process 7 SCD-2 dimension tables (LE, Site, GL Account, IC Site, Activity Center, External Function, Time)
+      - Build 3 hierarchy tables from dimension data
+      - Process fact tables (Oracle line items, SAP ECC items, SAP S/4 items)
+      - Unpivot SAP ECC ZhyperT HSL01-HSL16 columns into period rows
+      - Convert FCCS period format (P01 → 1)
+      - Apply FX conversion rates for non-USD entities
+
+  - name: Gold Layer Reconciliation
+    steps:
+      - Build FACT_GL_UNION_BALANCES (aggregated GL across all sources)
+      - Build FACT_FCCS_BASE (consolidation system data)
+      - Compute surrogate FK keys (MD5 hash of business keys)
+      - Create VW_RECON_BALANCES_VS_FCCS (FULL OUTER JOIN on FK keys)
+      - Calculate variance (GL_CLOSING - FCCS_CLOSING) per intersection
+      - Classify as RECONCILED (|variance| ≤ 0.01) or VARIANCE
+      - Build aggregate views (period, site, LE+site, GL account)
+
+  - name: Variance Reporting & Analysis
+    steps:
+      - Calculate KPIs (total intersections, reconciled %, variance %)
+      - Aggregate variances by period for trend analysis
+      - Aggregate by legal entity for site-level drilldown
+      - Categorize variance causes (rounding, timing, FX translation, genuine mismatch, missing)
+      - Generate heatmap (LE × Period matrix)
+      - Enable filtered drilldown to individual transaction level
+
+data_entities:
+  - name: GL Journal Entry Header
+    attributes:
+      - JE_HEADER_ID (PK)
+      - LEDGER_ID (FK)
+      - JE_SOURCE
+      - JE_CATEGORY
+      - PERIOD_NAME (FYyyyy-MM)
+      - CURRENCY_CODE
+      - POSTED_DATE
+      - STATUS (Posted/Draft)
+
+  - name: GL Journal Entry Line
+    attributes:
+      - JE_HEADER_ID (FK)
+      - JE_LINE_NUM
+      - CODE_COMBINATION_ID (FK)
+      - ENTERED_DR / ENTERED_CR
+      - ACCOUNTED_DR / ACCOUNTED_CR
+      - CURRENCY_CODE
+
+  - name: GL Union Balances (Gold Fact)
+    attributes:
+      - FK_DIM_LE
+      - FK_DIM_SITE
+      - FK_DIM_GL_ACCOUNT
+      - FISCAL_YEAR / PERIOD
+      - FUNCTIONAL_CURRENCY_CLOSING_BALANCE
+      - GROUP_CURRENCY_CLOSING_BALANCE
+      - SOURCE_SYSTEM_NAME
+
+  - name: FCCS Base (Gold Fact)
+    attributes:
+      - FK_DIM_LE
+      - FK_DIM_SITE
+      - FK_DIM_GL_ACCOUNT
+      - FISCAL_YEAR / PERIOD
+      - FUNCTIONAL_CURRENCY_CLOSING_BALANCE
+      - GROUP_CURRENCY_CLOSING_BALANCE
+      - SCENARIO (Actuals)
+
+  - name: Reconciliation Intersection
+    attributes:
+      - HARMONIZED_LE
+      - HARMONIZED_GL_ACCOUNT
+      - FISCAL_YEAR / PERIOD
+      - GL_FUNC_CLOSING / GL_GROUP_CLOSING
+      - FCCS_FUNC_CLOSING / FCCS_GROUP_CLOSING
+      - GROUP_VARIANCE (GL - FCCS)
+      - RECON_STATUS (RECONCILED / VARIANCE)
+
+  - name: Dimension - Legal Entity
+    attributes:
+      - HARMONIZED_LE (PK)
+      - LE_DESCR
+      - CURRENCY
+      - COUNTRY / REGION
+      - ENTITY_TYPE (Parent/Subsidiary)
+      - IS_CURRENT (SCD-2)
+
+  - name: Dimension - GL Account
+    attributes:
+      - HARMONIZED_GL_ACCOUNT (PK)
+      - GL_ACCOUNT_NAME
+      - ACCOUNT_TYPE (Asset/Liability/Equity/Revenue/Expense)
+      - PL_BS_INDICATOR
+      - IS_RECONCILIATION_ACCOUNT
+
+glossary:
+  - term: Code Block
+    definition: The combination of LE + Site + GL Account + Activity Center that defines a unique financial intersection point
+  - term: Harmonized
+    definition: Prefix indicating a field has been standardized across source systems into a common format
+  - term: FCCS
+    definition: Financial Consolidation and Close System (Oracle) — the target consolidation platform
+  - term: ZhyperA
+    definition: SAP ECC table containing GL line item actual data
+  - term: ZhyperT
+    definition: SAP ECC table containing GL total/balance data with period columns (HSL01-HSL16)
+  - term: ZIFIGLACCTLIR
+    definition: SAP S/4HANA CDS view for GL account line item reporting
+  - term: Medallion Architecture
+    definition: Data lakehouse pattern with Bronze (raw), Silver (cleansed/conformed), Gold (business-ready) layers
+  - term: SCD-2
+    definition: Slowly Changing Dimension Type 2 — tracks historical changes via IS_CURRENT flag and date ranges
+  - term: Group Currency
+    definition: The reporting/consolidation currency (typically USD) — amounts translated from local/functional currency
+  - term: Functional Currency
+    definition: The local operating currency of a legal entity (e.g., AED for UAE entity)
+  - term: Variance Intersection
+    definition: A unique combination of LE × GL Account × Period where GL and FCCS amounts are compared
+  - term: FULL OUTER JOIN
+    definition: SQL join that returns all records from both sides — captures GL-only (FCCS missing) and FCCS-only (GL missing) records
+
+typical_integrations:
+  - Oracle R12 General Ledger (GL JE Headers, Lines, Code Combinations, Ledgers, FX Rates)
+  - SAP ECC (ZhyperA line items, ZhyperT balances)
+  - SAP S/4HANA CDS Views (ZIFIGLACCTLIR, IFIJOURNALENT)
+  - Oracle FCCS / HFM (Base Periodic, Base YTD, PATH8CONS, LPATH8CONS, NEWSEGMENTSCONS)
+  - Snowflake Data Warehouse (medallion architecture host)
+  - Next.js / React Dashboard (visualization layer)
+  - Snowflake Tasks (pipeline orchestration)
+
+regulations:
+  - name: US GAAP (ASC 830)
+    impact: Requires proper FX translation methodology — functional currency must translate to group at period-end rates for balance sheet, average rates for income statement
+  - name: SOX (Sarbanes-Oxley Act)
+    impact: Reconciliation must be auditable — requires complete audit trail, segregation of duties, and evidence of review for material variances
+  - name: IFRS (IAS 21)
+    impact: Similar to ASC 830 but with different translation methodology for hyperinflationary economies — affects which entities need special handling
+
+kpis:
+  - Reconciliation Rate (% of intersections with |variance| ≤ threshold)
+  - Total Absolute Variance ($)
+  - Number of Material Variances (above investigation threshold)
+  - Sites with Variance (count of LEs requiring attention)
+  - Time to Close (days from period-end to full reconciliation)
+  - Data Freshness (hours since last pipeline refresh)
+  - False Positive Rate (variances due to timing that auto-resolve)
+
+common_patterns:
+  - name: Medallion Architecture for GL Data
+    description: >
+      Raw source data lands in Bronze (1:1 copy), Silver cleanses and conforms
+      (SCD-2 dimensions, harmonized keys), Gold produces business-ready facts
+      and reconciliation views.
+    when_to_apply: Always — any multi-source GL reconciliation needs layered cleansing
+    anti_patterns:
+      - Loading directly into Gold without Bronze/Silver (no audit trail)
+      - Skipping SCD-2 for dimensions (loses historical comparability)
+
+  - name: FULL OUTER JOIN Reconciliation
+    description: >
+      Join GL facts to FCCS facts on surrogate FK keys. FULL OUTER ensures
+      both GL-only (missing from FCCS) and FCCS-only (missing from GL)
+      records surface as variances.
+    when_to_apply: When comparing two independent systems that should have matching data
+    anti_patterns:
+      - Using INNER JOIN (silently drops unmatched records)
+      - Joining on NULL FK columns (NULL = NULL is FALSE — creates artificial 100% variance)
+      - Comparing closing balance to periodic activity (wrong comparison level)
+
+  - name: Variance Categorization
+    description: >
+      Classify each variance by likely cause: rounding (< $1), timing (year-end
+      accruals), FX translation (non-USD entities), genuine mismatch (>$5K for
+      USD entities), or missing (one-sided record).
+    when_to_apply: When reporting needs to distinguish actionable variances from noise
+    anti_patterns:
+      - Treating all variances as equal priority
+      - Not filtering by materiality threshold
+      - Missing FX-specific logic for non-USD entities
+
+  - name: Deterministic FK Key Generation
+    description: >
+      Generate surrogate FK keys using MD5 hash of business key combinations
+      (LE + Site + GL Account). Both GL and FCCS facts must use the SAME
+      hash function to ensure join alignment.
+    when_to_apply: When business keys span multiple columns and need a single join key
+    anti_patterns:
+      - Leaving FK columns NULL (breaks FULL OUTER JOIN)
+      - Using different hash functions for GL vs FCCS
+      - Not deduplicating before join (causes cartesian products)
+
+anti_patterns:
+  - Assuming SQL definition files match deployed Snowflake schema — always validate against INFORMATION_SCHEMA
+  - Generating TypeScript types from functional specs without verifying against actual API responses
+  - Using SELECT * in reconciliation views without explicit column aliasing
+  - Not handling TIMESTAMP_NTZ timezone ambiguity at the API boundary
+  - Trusting FULL OUTER JOIN results when FK columns contain NULLs
+  - Applying aggressive freshness thresholds (< 60min) to batch-loaded data systems
+  - Not deduplicating fact tables before reconciliation joins (creates N×M cartesian variance)

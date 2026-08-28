@@ -1,0 +1,526 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-12T17:14:24",
+    "backend": "rust",
+    "repos": [
+      "flask",
+      "fastapi",
+      "django",
+      "cpython",
+      "kubernetes"
+    ],
+    "total_runtime_s": 20.74
+  },
+  "stories": {
+    "story1": {
+      "results": {
+        "flask": {
+          "files": 83,
+          "symbols": 852,
+          "relations": 0,
+          "languages": {
+            "python": 83
+          },
+          "scout_time_s": 0.05,
+          "t0_time_s": 0.0,
+          "t1_time_s": 0.0,
+          "files_per_sec": 1769,
+          "symbols_per_sec": 18157,
+          "backend": "rust",
+          "db_size_mb": 0.0,
+          "memory_mb": 10.4
+        },
+        "fastapi": {
+          "files": 1125,
+          "symbols": 4888,
+          "relations": 0,
+          "languages": {
+            "python": 1121,
+            "javascript": 4
+          },
+          "scout_time_s": 0.21,
+          "t0_time_s": 0.1,
+          "t1_time_s": 0.1,
+          "files_per_sec": 5322,
+          "symbols_per_sec": 23122,
+          "backend": "rust",
+          "db_size_mb": 0.0,
+          "memory_mb": 11.4
+        },
+        "django": {
+          "files": 3006,
+          "symbols": 33918,
+          "relations": 236,
+          "languages": {
+            "python": 2892,
+            "javascript": 114
+          },
+          "scout_time_s": 1.27,
+          "t0_time_s": 0.2,
+          "t1_time_s": 0.8,
+          "files_per_sec": 2358,
+          "symbols_per_sec": 26607,
+          "backend": "rust",
+          "db_size_mb": 12.56,
+          "memory_mb": 37.4
+        },
+        "cpython": {
+          "files": 3418,
+          "symbols": 62774,
+          "relations": 0,
+          "languages": {
+            "python": 2270,
+            "c": 1118,
+            "javascript": 16,
+            "cpp": 7,
+            "kotlin": 5,
+            "typescript": 2
+          },
+          "scout_time_s": 1.42,
+          "t0_time_s": 0.1,
+          "t1_time_s": 1.2,
+          "files_per_sec": 2405,
+          "symbols_per_sec": 44172,
+          "backend": "rust",
+          "db_size_mb": 20.51,
+          "memory_mb": 58.0
+        },
+        "kubernetes": {
+          "files": 16927,
+          "symbols": 124518,
+          "relations": 0,
+          "languages": {
+            "go": 16914,
+            "python": 7,
+            "c": 6
+          },
+          "scout_time_s": 5.4,
+          "t0_time_s": 0.8,
+          "t1_time_s": 4.0,
+          "files_per_sec": 3136,
+          "symbols_per_sec": 23068,
+          "backend": "rust",
+          "db_size_mb": 60.46,
+          "memory_mb": 113.7
+        }
+      }
+    },
+    "story2": {
+      "flask": [
+        {
+          "pattern": "*Blueprint*",
+          "kind": "class",
+          "description": "Blueprint classes",
+          "matches": 4,
+          "latency_p50_ms": 0.07,
+          "latency_p95_ms": 0.178
+        },
+        {
+          "pattern": "*route*",
+          "kind": null,
+          "description": "Route definitions",
+          "matches": 17,
+          "latency_p50_ms": 0.203,
+          "latency_p95_ms": 0.274
+        },
+        {
+          "pattern": "*before_request*",
+          "kind": "function",
+          "description": "Request hooks",
+          "matches": 1,
+          "latency_p50_ms": 0.087,
+          "latency_p95_ms": 0.092
+        }
+      ],
+      "fastapi": [
+        {
+          "pattern": "*APIRouter*",
+          "kind": "class",
+          "description": "Router classes",
+          "matches": 1,
+          "latency_p50_ms": 0.142,
+          "latency_p95_ms": 0.156
+        },
+        {
+          "pattern": "*Depends*",
+          "kind": null,
+          "description": "Dependency injection",
+          "matches": 42,
+          "latency_p50_ms": 0.935,
+          "latency_p95_ms": 1.112
+        },
+        {
+          "pattern": "*middleware*",
+          "kind": "class",
+          "description": "Middleware classes",
+          "matches": 2,
+          "latency_p50_ms": 0.16,
+          "latency_p95_ms": 0.182
+        }
+      ],
+      "django": [
+        {
+          "pattern": "*Middleware*",
+          "kind": "class",
+          "description": "Middleware classes",
+          "matches": 50,
+          "latency_p50_ms": 2.147,
+          "latency_p95_ms": 2.301
+        },
+        {
+          "pattern": "*Model*",
+          "kind": "class",
+          "description": "Model base classes",
+          "matches": 50,
+          "latency_p50_ms": 2.245,
+          "latency_p95_ms": 2.404
+        },
+        {
+          "pattern": "*Compiler*",
+          "kind": "class",
+          "description": "Query compiler classes",
+          "matches": 10,
+          "latency_p50_ms": 1.644,
+          "latency_p95_ms": 1.702
+        },
+        {
+          "pattern": "*View*",
+          "kind": "class",
+          "description": "View classes",
+          "matches": 50,
+          "latency_p50_ms": 1.873,
+          "latency_p95_ms": 1.935
+        }
+      ],
+      "cpython": [
+        {
+          "pattern": "*compile*",
+          "kind": "function",
+          "description": "Compilation functions",
+          "matches": 41,
+          "latency_p50_ms": 1.585,
+          "latency_p95_ms": 1.655
+        },
+        {
+          "pattern": "*parse*",
+          "kind": "function",
+          "description": "Parser functions",
+          "matches": 50,
+          "latency_p50_ms": 1.429,
+          "latency_p95_ms": 1.555
+        },
+        {
+          "pattern": "*import*",
+          "kind": "class",
+          "description": "Import machinery",
+          "matches": 50,
+          "latency_p50_ms": 2.95,
+          "latency_p95_ms": 3.249
+        },
+        {
+          "pattern": "*socket*",
+          "kind": "class",
+          "description": "Socket classes",
+          "matches": 50,
+          "latency_p50_ms": 2.908,
+          "latency_p95_ms": 3.049
+        }
+      ],
+      "kubernetes": [
+        {
+          "pattern": "*Controller*",
+          "kind": null,
+          "description": "Controller symbols",
+          "matches": 50,
+          "latency_p50_ms": 0.296,
+          "latency_p95_ms": 0.397
+        },
+        {
+          "pattern": "*Server*",
+          "kind": null,
+          "description": "Server symbols",
+          "matches": 50,
+          "latency_p50_ms": 0.651,
+          "latency_p95_ms": 0.673
+        },
+        {
+          "pattern": "*Handler*",
+          "kind": null,
+          "description": "Handler symbols",
+          "matches": 50,
+          "latency_p50_ms": 2.686,
+          "latency_p95_ms": 3.042
+        },
+        {
+          "pattern": "*Manager*",
+          "kind": null,
+          "description": "Manager symbols",
+          "matches": 50,
+          "latency_p50_ms": 2.363,
+          "latency_p95_ms": 2.804
+        },
+        {
+          "pattern": "*Pod*",
+          "kind": null,
+          "description": "Pod-related symbols",
+          "matches": 50,
+          "latency_p50_ms": 0.565,
+          "latency_p95_ms": 0.576
+        }
+      ]
+    },
+    "story3": {
+      "flask": {
+        "communities_detected": 15,
+        "detection_time_s": 0.0,
+        "god_nodes": [
+          {
+            "name": "explain_template_loading_attempts",
+            "degree": 12
+          },
+          {
+            "name": "App",
+            "degree": 11
+          },
+          {
+            "name": "_default",
+            "degree": 10
+          },
+          {
+            "name": "Flask",
+            "degree": 9
+          },
+          {
+            "name": "_merge_blueprint_funcs",
+            "degree": 8
+          }
+        ],
+        "algorithm": "unknown"
+      },
+      "fastapi": {
+        "communities_detected": 23,
+        "detection_time_s": 0.01,
+        "god_nodes": [
+          {
+            "name": "jsonable_encoder",
+            "degree": 28
+          },
+          {
+            "name": "BaseModelWithConfig",
+            "degree": 23
+          },
+          {
+            "name": "Schema",
+            "degree": 22
+          },
+          {
+            "name": "solve_dependencies",
+            "degree": 18
+          },
+          {
+            "name": "__init__",
+            "degree": 13
+          }
+        ],
+        "algorithm": "unknown"
+      },
+      "django": {
+        "communities_detected": 51,
+        "detection_time_s": 0.1,
+        "god_nodes": [
+          {
+            "name": "formfield",
+            "degree": 21
+          },
+          {
+            "name": "Expression",
+            "degree": 20
+          },
+          {
+            "name": "cached_property",
+            "degree": 19
+          },
+          {
+            "name": "__init__",
+            "degree": 19
+          },
+          {
+            "name": "get_fallback_sql",
+            "degree": 18
+          }
+        ],
+        "algorithm": "unknown"
+      },
+      "cpython": {
+        "communities_detected": 36,
+        "detection_time_s": 0.17,
+        "god_nodes": [
+          {
+            "name": "_find_and_load_unlocked",
+            "degree": 9
+          },
+          {
+            "name": "_get_resource",
+            "degree": 9
+          },
+          {
+            "name": "cache_from_source",
+            "degree": 9
+          },
+          {
+            "name": "source_from_cache",
+            "degree": 9
+          },
+          {
+            "name": "_code_to_timestamp_pyc",
+            "degree": 9
+          }
+        ],
+        "algorithm": "unknown"
+      },
+      "kubernetes": {
+        "communities_detected": 0,
+        "detection_time_s": 0.35,
+        "god_nodes": [],
+        "algorithm": "unknown"
+      }
+    },
+    "story4": {
+      "flask": {
+        "call_chains": [
+          {
+            "symbol": "examples.celery.src.task_app.__init__.create_app",
+            "depth": 0,
+            "latency_ms": 241.02
+          }
+        ],
+        "impact_analysis": [
+          {
+            "file": "src/flask/app.py",
+            "dependents": 16,
+            "latency_ms": 0.56
+          },
+          {
+            "file": "src/flask/blueprints.py",
+            "dependents": 4,
+            "latency_ms": 0.17
+          }
+        ]
+      },
+      "fastapi": {
+        "call_chains": [
+          {
+            "symbol": "fastapi.dependencies.utils.solve_dependencies",
+            "depth": 0,
+            "latency_ms": 216.91
+          }
+        ],
+        "impact_analysis": [
+          {
+            "file": "fastapi/applications.py",
+            "dependents": 1,
+            "latency_ms": 0.28
+          },
+          {
+            "file": "fastapi/routing.py",
+            "dependents": 6,
+            "latency_ms": 0.45
+          }
+        ]
+      },
+      "django": {
+        "call_chains": [
+          {
+            "symbol": "django.utils.regex_helper._lazy_re_compile",
+            "depth": 0,
+            "latency_ms": 213.6
+          }
+        ],
+        "impact_analysis": [
+          {
+            "file": "django/db/models/base.py",
+            "dependents": 2,
+            "latency_ms": 0.63
+          },
+          {
+            "file": "django/http/response.py",
+            "dependents": 1,
+            "latency_ms": 0.3
+          }
+        ]
+      },
+      "cpython": {
+        "call_chains": [
+          {
+            "symbol": "Lib.importlib._bootstrap._find_and_load_unlocked",
+            "depth": 0,
+            "latency_ms": 232.26
+          }
+        ],
+        "impact_analysis": [
+          {
+            "file": "Lib/importlib/__init__.py",
+            "dependents": 0,
+            "latency_ms": 0.18
+          },
+          {
+            "file": "Lib/pathlib/__init__.py",
+            "dependents": 0,
+            "latency_ms": 0.1
+          }
+        ]
+      },
+      "kubernetes": {
+        "call_chains": [
+          {
+            "symbol": "cmd.kube-proxy.app.options.eventHandler",
+            "depth": 0,
+            "latency_ms": 196.88
+          }
+        ],
+        "impact_analysis": [
+          {
+            "file": "pkg/api/types.go",
+            "dependents": 0,
+            "latency_ms": 0.12
+          }
+        ]
+      }
+    },
+    "story5": {
+      "flask": {
+        "noop_time_s": 0.007,
+        "modified_files": 10,
+        "incremental_time_s": 0.228,
+        "files_reparsed": 10
+      },
+      "fastapi": {
+        "noop_time_s": 0.048,
+        "modified_files": 10,
+        "incremental_time_s": 0.245,
+        "files_reparsed": 10
+      },
+      "django": {
+        "noop_time_s": 0.232,
+        "modified_files": 10,
+        "incremental_time_s": 0.372,
+        "files_reparsed": 10
+      },
+      "cpython": {
+        "noop_time_s": 0.338,
+        "modified_files": 10,
+        "incremental_time_s": 0.269,
+        "files_reparsed": 19
+      },
+      "kubernetes": {
+        "noop_time_s": 0.901,
+        "modified_files": 10,
+        "incremental_time_s": 0.728,
+        "files_reparsed": 25
+      }
+    },
+    "story6": {
+      "summary": "See SHOWCASE.md for the scale comparison table"
+    }
+  }
+}

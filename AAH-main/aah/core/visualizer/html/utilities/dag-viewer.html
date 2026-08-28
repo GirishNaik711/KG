@@ -1,0 +1,2039 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DAG Review Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+  <script src="../rapids-loader.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef2f6;
+      --surface: #ffffff;
+      --surface-soft: #f7f9fc;
+      --surface-tint: #eef7f5;
+      --ink: #111827;
+      --muted: #64748b;
+      --subtle: #94a3b8;
+      --line: #d8e0ea;
+      --line-strong: #bdc8d6;
+      --brand: #155e75;
+      --brand-strong: #0f3f52;
+      --accent: #c2410c;
+      --good: #0f766e;
+      --warn: #b45309;
+      --focus: #3730a3;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 14px 40px rgba(15, 23, 42, 0.12);
+      --header-h: 72px;
+      --left-w: 384px;
+      --gap: 16px;
+      --radius: 8px;
+      --radius-lg: 10px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #8da0b7 #eef2f6;
+    }
+
+    *::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    *::-webkit-scrollbar-track {
+      background: #eef2f6;
+      border-radius: 999px;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #aebbd0, #7f91aa);
+      border: 2px solid #eef2f6;
+      border-radius: 999px;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #8fa0b7, #60738c);
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      font-family: Manrope, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(216, 224, 234, 0.55) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(216, 224, 234, 0.55) 1px, transparent 1px),
+        var(--bg);
+      background-size: 36px 36px;
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button,
+    .file-pick {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease, background 0.16s ease;
+    }
+
+    button:hover,
+    .file-pick:hover {
+      border-color: var(--line-strong);
+      box-shadow: var(--shadow-sm);
+    }
+
+    button:active,
+    .file-pick:active {
+      transform: translateY(1px);
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    .file-pick:focus-visible {
+      outline: 3px solid rgba(21, 94, 117, 0.2);
+      outline-offset: 2px;
+      border-color: var(--brand);
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--ink);
+      padding: 9px 10px;
+    }
+
+    input::placeholder,
+    textarea::placeholder { color: #94a3b8; }
+
+    .app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      padding: var(--gap);
+    }
+
+    .top-shell {
+      position: absolute;
+      top: var(--gap);
+      left: var(--gap);
+      right: var(--gap);
+      z-index: 20;
+    }
+
+    .top-shell.hidden,
+    .left-panel.hidden,
+    .upload-gate.hidden { display: none; }
+
+    .toolbar {
+      height: 56px;
+      display: grid;
+      grid-template-columns: auto minmax(220px, 1fr) auto auto minmax(180px, 280px);
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(18px);
+    }
+
+    .app-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 8px 0 4px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      white-space: nowrap;
+      letter-spacing: 0;
+    }
+
+    .app-title::before {
+      content: "";
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(21, 94, 117, 0.95), rgba(15, 118, 110, 0.92)),
+        var(--brand);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+    }
+
+    .toolbar button,
+    .controls-shell button,
+    .drop-zone button,
+    .details button,
+    .drawer-header button {
+      padding: 8px 12px;
+      font-weight: 650;
+    }
+
+    .toolbar button:not(.secondary),
+    .controls-shell button.primary,
+    .drop-zone button {
+      border-color: transparent;
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), #0f766e);
+    }
+
+    .toolbar button:not(.secondary):hover,
+    .controls-shell button.primary:hover,
+    .drop-zone button:hover {
+      background: linear-gradient(135deg, var(--brand-strong), #115e59);
+    }
+
+    .toolbar button.secondary,
+    .controls-shell button.secondary,
+    .tool-grid button,
+    .details button,
+    .drawer-header button {
+      background: #f8fafc;
+    }
+
+    #status {
+      min-width: 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 8px;
+    }
+
+    .left-panel {
+      position: absolute;
+      top: calc(var(--gap) + var(--header-h));
+      left: var(--gap);
+      bottom: var(--gap);
+      width: var(--left-w);
+      z-index: 16;
+    }
+
+    .controls-shell {
+      height: 100%;
+      display: grid;
+      align-content: start;
+      gap: 12px;
+      padding: 12px;
+      overflow: auto;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(18px);
+    }
+
+    .section-card {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0;
+      color: #0f172a;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .file-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+    }
+
+    .file-pick {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .file-name {
+      min-width: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .action-row,
+    .meta-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .chip {
+      min-height: 70px;
+      display: grid;
+      align-content: center;
+      gap: 5px;
+      padding: 10px;
+      background: var(--surface-soft);
+      border: 1px solid #e3e9f1;
+      border-radius: var(--radius);
+    }
+
+    .chip .k {
+      color: var(--muted);
+      font-size: 0.69rem;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .chip .v {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 1.12rem;
+      font-weight: 650;
+    }
+
+    .waves {
+      max-height: 260px;
+      overflow: auto;
+      padding: 10px;
+      background: var(--surface-soft);
+      border: 1px solid #e3e9f1;
+      border-radius: var(--radius);
+      font-size: 0.82rem;
+    }
+
+    .waves h3 {
+      margin: 0 0 10px;
+      font-size: 0.86rem;
+      font-weight: 750;
+    }
+
+    .wave-row {
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      padding: 6px 0;
+      border-top: 1px solid #e8edf4;
+    }
+
+    .wave-row:first-of-type { border-top: 0; }
+
+    .wave-label {
+      color: var(--muted);
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.75rem;
+      line-height: 1.9;
+    }
+
+    .wave-items,
+    .wave-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .wave-node-btn,
+    .wave-legend .item {
+      min-height: 26px;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.74rem;
+      font-weight: 600;
+    }
+
+    .wave-node-btn {
+      border-color: #cbdff1;
+      color: #164e63;
+      background: #ecfeff;
+    }
+
+    .wave-legend {
+      max-height: 116px;
+      overflow: auto;
+      padding: 10px;
+      align-items: center;
+      background: var(--surface-soft);
+      border: 1px solid #e3e9f1;
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .wave-legend .item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #fff;
+    }
+
+    .wave-legend .item.active {
+      border-color: var(--brand);
+      background: #ecfeff;
+      color: #164e63;
+    }
+
+    .wave-legend .swatch {
+      width: 12px;
+      height: 12px;
+      flex: 0 0 auto;
+      border: 1px solid #94a3b8;
+      border-radius: 3px;
+    }
+
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      align-content: start;
+    }
+
+    .tool-grid label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .tool-grid .span2,
+    .tool-grid .span4,
+    #whyBlocked {
+      grid-column: 1 / -1;
+    }
+
+    #whyBlocked {
+      padding: 10px;
+      min-height: 42px;
+      color: var(--muted);
+      background: var(--surface-soft);
+      border: 1px solid #e3e9f1;
+      border-radius: var(--radius);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .graph-stage {
+      position: absolute;
+      top: calc(var(--gap) + var(--header-h));
+      left: calc(var(--gap) + var(--left-w) + var(--gap));
+      right: var(--gap);
+      bottom: var(--gap);
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+    }
+
+    .graph-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      background:
+        linear-gradient(90deg, rgba(226, 232, 240, 0.65) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(226, 232, 240, 0.65) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    #graph {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+
+    #hoverTip {
+      position: absolute;
+      z-index: 8;
+      left: 16px;
+      top: 16px;
+      max-width: min(46ch, 78vw);
+      padding: 8px 10px;
+      color: #334155;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      font-size: 0.82rem;
+      line-height: 1.35;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 0.16s ease, transform 0.16s ease;
+    }
+
+    #hoverTip.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      z-index: 30;
+      width: min(460px, 94vw);
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      background: rgba(255, 255, 255, 0.98);
+      border-left: 1px solid var(--line);
+      box-shadow: -24px 0 60px rgba(15, 23, 42, 0.18);
+      transform: translateX(100%);
+      transition: transform 0.22s ease;
+    }
+
+    .drawer.open { transform: translateX(0); }
+
+    .drawer-header {
+      min-height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .drawer-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .drawer-actions {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .drawer-body,
+    .drawer-pane {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .drawer-pane {
+      height: 100%;
+      overflow: auto;
+    }
+
+    .drawer-pane.hidden { display: none; }
+
+    .details {
+      padding: 14px;
+      color: #334155;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .details h3 {
+      margin: 0 0 10px;
+      color: var(--ink);
+      font-size: 1.05rem;
+    }
+
+    .details p { margin: 9px 0; }
+
+    .details .mono {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.82rem;
+    }
+
+    .details ul {
+      margin: 6px 0 12px;
+      padding-left: 18px;
+    }
+
+    .details textarea {
+      min-height: 82px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .details .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 10px 0;
+    }
+
+    .details label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .details input[type="checkbox"] {
+      width: auto;
+      min-height: auto;
+    }
+
+    .backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 26;
+      background: rgba(15, 23, 42, 0.26);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+    }
+
+    .backdrop.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .upload-gate {
+      position: absolute;
+      inset: 0;
+      z-index: 40;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        linear-gradient(135deg, rgba(238, 242, 246, 0.96), rgba(226, 236, 240, 0.92));
+    }
+
+    .drop-card {
+      width: min(760px, 96vw);
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(216, 224, 234, 0.9);
+      border-radius: 14px;
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(18px);
+    }
+
+    .drop-zone {
+      min-height: 310px;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 14px;
+      padding: 34px 20px;
+      text-align: center;
+      color: var(--muted);
+      background: #fff;
+      border: 1px dashed #9fb2c8;
+      border-radius: 10px;
+      transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .drop-zone::before {
+      content: "DAG";
+      display: grid;
+      place-items: center;
+      width: 58px;
+      height: 58px;
+      border-radius: 14px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), #0f766e);
+      font-weight: 850;
+      letter-spacing: 0.04em;
+      box-shadow: 0 14px 26px rgba(21, 94, 117, 0.24);
+    }
+
+    .drop-zone.active {
+      border-color: var(--brand);
+      background: #f0fdfa;
+      box-shadow: inset 0 0 0 1px rgba(21, 94, 117, 0.16);
+    }
+
+    .drop-zone h2 {
+      margin: 0;
+      color: var(--ink);
+      font-size: clamp(1.65rem, 4vw, 2.6rem);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .drop-zone p {
+      max-width: 54ch;
+      margin: 0;
+      font-size: 0.98rem;
+      line-height: 1.55;
+    }
+
+    .drop-zone button {
+      min-width: 160px;
+      margin-top: 4px;
+      padding: 10px 15px;
+    }
+
+    @media (max-width: 1060px) {
+      :root { --left-w: 330px; }
+
+      .toolbar {
+        grid-template-columns: auto minmax(160px, 1fr) auto auto;
+      }
+
+      #status { display: none; }
+    }
+
+    @media (max-width: 820px) {
+      body { overflow: auto; }
+
+      .app {
+        min-height: 100vh;
+        height: auto;
+        display: grid;
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .top-shell,
+      .left-panel,
+      .graph-stage {
+        position: static;
+        width: 100%;
+      }
+
+      .toolbar {
+        height: auto;
+        grid-template-columns: 1fr;
+      }
+
+      .app-title { padding: 0; }
+
+      .left-panel {
+        order: 2;
+        height: auto;
+      }
+
+      .controls-shell {
+        max-height: none;
+        height: auto;
+      }
+
+      .graph-stage {
+        order: 3;
+        min-height: 62vh;
+      }
+
+      .tool-grid,
+      .action-row {
+        grid-template-columns: 1fr;
+      }
+
+      .meta-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .drop-zone { min-height: 280px; }
+    }
+
+    @media (max-width: 520px) {
+      .meta-row { grid-template-columns: 1fr; }
+      .file-row { grid-template-columns: 1fr; }
+      .wave-row { grid-template-columns: 1fr; }
+      .drawer { width: 100vw; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="top-shell hidden" id="topShell" aria-label="DAG toolbar">
+      <div class="toolbar">
+        <a href="../index.html" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 6px; background: #f8fafc; border: 1px solid var(--line); font-size: 0.875rem; font-weight: 600; transition: all 0.16s ease;">
+          <span style="font-size: 1.1rem;">←</span> Back
+        </a>
+        <div class="app-title">DAG Review Studio</div>
+        <input id="featureSearch" placeholder="Search feature id or description" autocomplete="off" />
+        <button id="focusBtn" type="button">Find Node</button>
+        <button id="clearFocusBtn" class="secondary" type="button">Clear Focus</button>
+        <div id="status" style="display: none"></div>
+      </div>
+    </section>
+
+    <section class="left-panel hidden" id="leftPanel" aria-label="Controls">
+      <div class="controls-shell">
+        <section class="section-card">
+          <div class="section-title">Data</div>
+          <input id="fileInput" type="file" accept=".json,application/json" hidden />
+          <div class="file-row">
+            <button id="filePickBtn" class="file-pick" type="button">Choose File</button>
+            <span id="fileName" class="file-name">No file chosen</span>
+          </div>
+          <div class="action-row">
+            <button id="loadBtn" class="primary" type="button">Load JSON</button>
+            <button id="layoutBtn" class="secondary" type="button">Re-run Layout</button>
+          </div>
+          <div class="meta-row">
+            <div class="chip"><div class="k">Nodes</div><div class="v" id="totalNodes">0</div></div>
+            <div class="chip"><div class="k">Edges</div><div class="v" id="totalEdges">0</div></div>
+            <div class="chip"><div class="k">Is DAG</div><div class="v" id="dagFlag">-</div></div>
+            <div class="chip"><div class="k">Waves</div><div class="v" id="totalWaves">0</div></div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-title">Execution Waves</div>
+          <div class="waves" id="waves"></div>
+          <div class="wave-legend" id="waveLegend">Wave legend will appear after load.</div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-title">Review Tools</div>
+          <div class="tool-grid">
+            <label class="span2">Wave focus
+              <select id="waveFocusSelect">
+                <option value="">All waves</option>
+              </select>
+            </label>
+            
+            <button id="exportPngBtn" type="button">Export PNG</button>
+            <button id="exportJsonBtn" type="button">Export JSON</button>
+            <label class="span2">Path from <input id="pathFromInput" placeholder="F001" autocomplete="off" /></label>
+            <label class="span2">Path to <input id="pathToInput" placeholder="F010" autocomplete="off" /></label>
+            <button class="span2" id="pathFindBtn" type="button">Find Path</button>
+            <button class="span2" id="pathClearBtn" type="button">Clear Path</button>
+            <div class="span4" id="whyBlocked">Select a node for "why blocked".</div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="graph-stage" aria-label="Dependency graph">
+      <div id="graph"></div>
+      <div id="hoverTip"></div>
+    </section>
+
+    <section class="upload-gate" id="uploadGate">
+      <div class="drop-card">
+        <div class="drop-zone" id="dropZone">
+          <h2>DAG Review Studio</h2>
+          <p>Drop a DAG JSON file to inspect dependencies, execution waves, review notes, and blocked work in one clean workspace.</p>
+          <button id="browseBtn" type="button">Choose JSON File</button>
+          <input id="gateFileInput" type="file" accept=".json,application/json" hidden />
+        </div>
+      </div>
+    </section>
+
+    <aside class="drawer" id="drawer" aria-label="Feature details">
+      <div class="drawer-header">
+        <h2 id="drawerTitle">Feature Details</h2>
+        <div class="drawer-actions">
+          <button id="closeDrawerBtn" type="button">Close</button>
+        </div>
+      </div>
+      <div class="drawer-body">
+        <div class="drawer-pane" id="detailsPane">
+          <div class="details" id="details">
+            <h3>Node Details</h3>
+            <p>Double click a node to open details.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <div class="backdrop" id="backdrop"></div>
+  </main>
+
+  <script>
+const demoData = {
+      nodes: [
+        {
+          id: "F001",
+          dependencies: [],
+          dependents: ["F002", "F003"],
+          spec_ref: "SPEC-001",
+          description: "Create REST API endpoint for multipart file uploads with JWT authentication",
+          file_scope: [
+            "backend/app/api/v1/files.py",
+            "backend/app/api/v1/__init__.py",
+            "backend/app/api/__init__.py",
+            "backend/app/main.py"
+          ],
+          acceptance_criteria: [
+            "Accept POST requests to /api/v1/files/upload with multipart/form-data",
+            "Validate JWT token from Authorization header (signature, expiry, user exists)",
+            "Return HTTP 401 if JWT is missing or invalid",
+            "Return HTTP 201 with file_id on successful upload",
+            "Support metadata field in request body (description, tags)"
+          ],
+          test_cases: [
+            { id: "TC001", description: "Upload valid .xlsx file with JWT token" },
+            { id: "TC002", description: "Reject upload without JWT token" },
+            { id: "TC003", description: "Reject upload with expired JWT token" }
+          ],
+          status: "pending"
+        },
+        {
+          id: "F002",
+          dependencies: ["F001"],
+          dependents: ["F003"],
+          spec_ref: "SPEC-002",
+          description: "Persist uploaded files in object storage",
+          file_scope: ["backend/app/storage/client.py"],
+          acceptance_criteria: ["Store file and metadata", "Return signed retrieval URL"],
+          test_cases: [{ id: "TC010", description: "Store CSV successfully" }],
+          status: "pending"
+        },
+        {
+          id: "F003",
+          dependencies: ["F001", "F002"],
+          dependents: [],
+          spec_ref: "SPEC-003",
+          description: "Emit processing job after successful upload",
+          file_scope: ["backend/app/jobs/enqueue.py"],
+          acceptance_criteria: ["Queue job with file_id and owner_id"],
+          test_cases: [{ id: "TC020", description: "Job queued once" }],
+          status: "pending"
+        }
+      ],
+      edges: [
+        { from: "F001", to: "F002" },
+        { from: "F001", to: "F003" },
+        { from: "F002", to: "F003" }
+      ],
+      stats: { total_nodes: 3, total_edges: 3, is_dag: true }
+    };
+
+    const graphEl = document.getElementById("graph");
+    const detailsEl = document.getElementById("details");
+    const statusEl = document.getElementById("status");
+    const fileInputEl = document.getElementById("fileInput");
+    const filePickBtnEl = document.getElementById("filePickBtn");
+    const fileNameEl = document.getElementById("fileName");
+    const gateFileInputEl = document.getElementById("gateFileInput");
+    const uploadGateEl = document.getElementById("uploadGate");
+    const dropZoneEl = document.getElementById("dropZone");
+    const browseBtnEl = document.getElementById("browseBtn");
+    const totalNodesEl = document.getElementById("totalNodes");
+    const totalEdgesEl = document.getElementById("totalEdges");
+    const dagFlagEl = document.getElementById("dagFlag");
+    const totalWavesEl = document.getElementById("totalWaves");
+    const wavesEl = document.getElementById("waves");
+    const waveLegendEl = document.getElementById("waveLegend");
+    const hoverTipEl = document.getElementById("hoverTip");
+    const featureSearchEl = document.getElementById("featureSearch");
+    const waveFocusSelectEl = document.getElementById("waveFocusSelect");
+    
+    const exportPngBtnEl = document.getElementById("exportPngBtn");
+    const exportJsonBtnEl = document.getElementById("exportJsonBtn");
+    const pathFromInputEl = document.getElementById("pathFromInput");
+    const pathToInputEl = document.getElementById("pathToInput");
+    const pathFindBtnEl = document.getElementById("pathFindBtn");
+    const pathClearBtnEl = document.getElementById("pathClearBtn");
+    const whyBlockedEl = document.getElementById("whyBlocked");
+    const drawerEl = document.getElementById("drawer");
+    const drawerTitleEl = document.getElementById("drawerTitle");
+    const detailsPaneEl = document.getElementById("detailsPane");
+    const backdropEl = document.getElementById("backdrop");
+    const topShellEl = document.getElementById("topShell");
+    const leftPanelEl = document.getElementById("leftPanel");
+
+    cytoscape.use(cytoscapeDagre);
+
+    let cy;
+    let originalNodes = [];
+    let originalEdges = [];
+    let nodeMap = new Map();
+    let predecessorsMap = new Map();
+    let successorsMap = new Map();
+    let executionWaves = [];
+    let waveIndexByNode = new Map();
+    let depthByNode = new Map();
+    let notesByNode = new Map();
+    let nodeConflictCount = new Map();
+    let selectedNodeId = "";
+    let compareA = "";
+    let compareB = "";
+    let reviewModeEnabled = true;
+    let waveFocus = "";
+    let activePathIds = [];
+    let lastNodeTap = { id: "", time: 0 };
+
+    function asList(items) {
+      if (!Array.isArray(items) || !items.length) return "<em>None</em>";
+      return `<ul>${items.map((x) => `<li>${escapeHtml(String(x))}</li>`).join("")}</ul>`;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function short(text, n = 80) {
+      const s = String(text || "");
+      return s.length > n ? `${s.slice(0, n - 1)}...` : s;
+    }
+
+    function openDrawer() {
+      detailsPaneEl.classList.remove("hidden");
+      drawerTitleEl.textContent = "Feature Details";
+      drawerEl.classList.add("open");
+      backdropEl.classList.add("show");
+    }
+
+    function closeDrawer() {
+      drawerEl.classList.remove("open");
+      backdropEl.classList.remove("show");
+    }
+
+    function runLayout() {
+      if (!cy) return;
+      cy.resize();
+      const xGap = 235;
+      const yGap = 148;
+      const positions = {};
+      executionWaves.forEach((wave, waveIdx) => {
+        wave.forEach((fid, idx) => {
+          positions[fid] = { x: 24 + idx * xGap, y: 20 + waveIdx * yGap };
+        });
+      });
+
+      cy.layout({
+        name: "preset",
+        positions: (node) => positions[node.id()] || { x: 0, y: 0 },
+        fit: false,
+        padding: 14,
+        animate: false
+      }).run();
+
+      const viewportPadding = 28;
+      requestAnimationFrame(() => {
+        cy.resize();
+        const layoutBounds = cy.elements().boundingBox();
+        const zoom = Math.min(1, cy.zoom());
+        cy.zoom(zoom);
+        cy.pan({
+          x: viewportPadding - layoutBounds.x1 * zoom,
+          y: viewportPadding - layoutBounds.y1 * zoom
+        });
+      });
+    }
+
+    function queueLayout() {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          runLayout();
+        });
+      });
+    }
+
+    function computeDepthsFromTopo(topoOrder) {
+      depthByNode = new Map();
+      topoOrder.forEach((fid) => {
+        const preds = predecessorsMap.get(fid) || new Set();
+        let d = 0;
+        preds.forEach((p) => {
+          d = Math.max(d, (depthByNode.get(p) ?? 0) + 1);
+        });
+        depthByNode.set(fid, d);
+      });
+    }
+
+    function getDependenciesTransitive(fid) {
+      const seen = new Set();
+      const stack = [...(predecessorsMap.get(fid) || [])];
+      while (stack.length) {
+        const curr = stack.pop();
+        if (seen.has(curr)) continue;
+        seen.add(curr);
+        for (const p of predecessorsMap.get(curr) || []) stack.push(p);
+      }
+      return Array.from(seen).sort();
+    }
+
+    function getDependentsTransitive(fid) {
+      const seen = new Set();
+      const stack = [...(successorsMap.get(fid) || [])];
+      while (stack.length) {
+        const curr = stack.pop();
+        if (seen.has(curr)) continue;
+        seen.add(curr);
+        for (const s of successorsMap.get(curr) || []) stack.push(s);
+      }
+      return Array.from(seen).sort();
+    }
+
+    function buildAdjacency() {
+      predecessorsMap = new Map();
+      successorsMap = new Map();
+      for (const n of originalNodes) {
+        predecessorsMap.set(n.id, new Set());
+        successorsMap.set(n.id, new Set());
+      }
+      for (const e of originalEdges) {
+        if (!predecessorsMap.has(e.to) || !successorsMap.has(e.from)) {
+          throw new Error(`Edge references unknown node: ${e.from} -> ${e.to}`);
+        }
+        predecessorsMap.get(e.to).add(e.from);
+        successorsMap.get(e.from).add(e.to);
+      }
+    }
+
+    function topologicalGenerations() {
+      const indegree = new Map();
+      for (const n of originalNodes) indegree.set(n.id, predecessorsMap.get(n.id).size);
+
+      let current = Array.from(indegree.entries())
+        .filter(([, d]) => d === 0)
+        .map(([id]) => id)
+        .sort();
+
+      const generations = [];
+      const topoOrder = [];
+      let processed = 0;
+
+      while (current.length) {
+        generations.push(current);
+        const next = [];
+        for (const fid of current) {
+          processed += 1;
+          topoOrder.push(fid);
+          for (const dep of successorsMap.get(fid) || []) {
+            const d = (indegree.get(dep) || 0) - 1;
+            indegree.set(dep, d);
+            if (d === 0) next.push(dep);
+          }
+        }
+        current = next.sort();
+      }
+
+      if (processed !== originalNodes.length) {
+        throw new Error("Cannot compute waves: graph contains cycles");
+      }
+      return { generations, topoOrder };
+    }
+
+    function splitByFileScope(generation) {
+      const scopes = new Map();
+      generation.forEach((fid) => {
+        const fs = nodeMap.get(fid)?.file_scope || [];
+        if (Array.isArray(fs) && fs.length) scopes.set(fid, new Set(fs));
+      });
+      if (!scopes.size) return [generation];
+
+      const subWaves = [];
+      generation.forEach((fid) => {
+        const fidFiles = scopes.get(fid) || new Set();
+        let placed = false;
+        for (const [combinedFiles, bucket] of subWaves) {
+          const overlaps = Array.from(fidFiles).some((f) => combinedFiles.has(f));
+          if (!overlaps) {
+            fidFiles.forEach((f) => combinedFiles.add(f));
+            bucket.push(fid);
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) subWaves.push([new Set(fidFiles), [fid]]);
+      });
+
+      return subWaves.map(([, bucket]) => bucket.sort());
+    }
+
+    function computeExecutionWaves() {
+      const { generations, topoOrder } = topologicalGenerations();
+      const waves = [];
+      generations.forEach((generation) => {
+        const sortedGen = [...generation].sort();
+        const subWaves = splitByFileScope(sortedGen);
+        waves.push(...subWaves);
+      });
+      waveIndexByNode = new Map();
+      waves.forEach((wave, idx) => wave.forEach((fid) => waveIndexByNode.set(fid, idx)));
+      computeDepthsFromTopo(topoOrder);
+      return waves;
+    }
+
+    function waveColor(idx) {
+      const palette = [
+        ["#e8f1ff", "#2563eb"],
+        ["#e8faf4", "#0f766e"],
+        ["#fff3e8", "#c2410c"],
+        ["#f1ecff", "#6d28d9"],
+        ["#ffeef5", "#be185d"],
+        ["#ecfeff", "#0e7490"],
+        ["#f5f3ff", "#4338ca"],
+        ["#fff7ed", "#9a3412"],
+        ["#ecfccb", "#4d7c0f"]
+      ];
+      return palette[idx % palette.length];
+    }
+
+    function highlightDependencies(fid) {
+      if (!cy) return;
+      cy.elements().removeClass("dep-in dep-out dep-focus");
+      const node = cy.getElementById(fid);
+      if (!node || !node.length) return;
+      node.addClass("dep-focus");
+
+      // Upstream: all transitive dependencies (ancestors) and connecting edges
+      const seenUp = new Set([fid]);
+      const stackUp = [fid];
+      while (stackUp.length) {
+        const curr = stackUp.pop();
+        const currNode = cy.getElementById(curr);
+        currNode.incomers("edge").forEach((edge) => {
+          edge.addClass("dep-in");
+          const src = edge.source();
+          src.addClass("dep-in");
+          if (!seenUp.has(src.id())) {
+            seenUp.add(src.id());
+            stackUp.push(src.id());
+          }
+        });
+      }
+
+      // Downstream: all transitive dependents (descendants) and connecting edges
+      const seenDown = new Set([fid]);
+      const stackDown = [fid];
+      while (stackDown.length) {
+        const curr = stackDown.pop();
+        const currNode = cy.getElementById(curr);
+        currNode.outgoers("edge").forEach((edge) => {
+          edge.addClass("dep-out");
+          const tgt = edge.target();
+          tgt.addClass("dep-out");
+          if (!seenDown.has(tgt.id())) {
+            seenDown.add(tgt.id());
+            stackDown.push(tgt.id());
+          }
+        });
+      }
+    }
+
+    function renderWaveList() {
+      if (!executionWaves.length) {
+        wavesEl.innerHTML = "<h3>Execution Waves</h3><p>No waves computed yet.</p>";
+        return;
+      }
+      const rows = executionWaves.map((wave, idx) => `
+        <div class="wave-row">
+          <div class="wave-label">Wave ${idx + 1}</div>
+          <div class="wave-items">
+            ${wave.map((fid) => `<button class="wave-node-btn" data-node-id="${escapeHtml(fid)}">${escapeHtml(fid)}</button>`).join("")}
+          </div>
+        </div>
+      `).join("");
+      wavesEl.innerHTML = `<h3>Execution Waves (file-scope safe)</h3>${rows}`;
+    }
+
+    function renderWaveFocusOptions() {
+      const opts = ['<option value="">All waves</option>'];
+      executionWaves.forEach((wave, idx) => {
+        opts.push(`<option value="${idx}">Wave ${idx + 1} (${wave.length})</option>`);
+      });
+      waveFocusSelectEl.innerHTML = opts.join("");
+      waveFocusSelectEl.value = waveFocus;
+    }
+
+    function renderWaveLegend() {
+      if (!executionWaves.length) {
+        waveLegendEl.textContent = "Wave legend will appear after load.";
+        return;
+      }
+      const html = executionWaves.map((wave, idx) => {
+        const [bg, border] = waveColor(idx);
+        const active = String(idx) === String(waveFocus) ? " active" : "";
+        return `<button class="item${active}" data-wave-index="${idx}"><span class="swatch" style="background:${bg};border-color:${border};"></span>Wave ${idx + 1} (${wave.length})</button>`;
+      }).join("");
+      waveLegendEl.innerHTML = html;
+    }
+
+    function getCompletedSet() {
+      const completed = new Set();
+      originalNodes.forEach((n) => {
+        const note = notesByNode.get(n.id);
+        if (String(n.status || "").toLowerCase() === "done" || note?.resolved) completed.add(n.id);
+      });
+      return completed;
+    }
+
+    function setWhyBlocked(fid) {
+      if (!fid) {
+        whyBlockedEl.textContent = 'Select a node for "why blocked".';
+        return;
+      }
+      const completed = getCompletedSet();
+      const unmet = Array.from(predecessorsMap.get(fid) || []).filter((p) => !completed.has(p)).sort();
+      if (!unmet.length) {
+        whyBlockedEl.innerHTML = `<strong>${escapeHtml(fid)}</strong> is unblocked. All direct dependencies are satisfied.`;
+        return;
+      }
+      whyBlockedEl.innerHTML = `<strong>${escapeHtml(fid)}</strong> is blocked by: ${unmet.map(escapeHtml).join(", ")}`;
+    }
+
+    function relatedChain(fid) {
+      const chain = new Set([fid]);
+      const stackA = [fid];
+      while (stackA.length) {
+        const curr = stackA.pop();
+        for (const p of predecessorsMap.get(curr) || []) {
+          if (!chain.has(p)) { chain.add(p); stackA.push(p); }
+        }
+      }
+      const stackB = [fid];
+      while (stackB.length) {
+        const curr = stackB.pop();
+        for (const s of successorsMap.get(curr) || []) {
+          if (!chain.has(s)) { chain.add(s); stackB.push(s); }
+        }
+      }
+      return chain;
+    }
+
+    function applyViewFilters() {
+      if (!cy) return;
+      cy.elements().removeClass("filtered-out muted path-node path-edge critical-node critical-edge note-open");
+      const muted = new Set();
+
+      if (waveFocus !== "") {
+        const idx = Number(waveFocus);
+        const waveSet = new Set(executionWaves[idx] || []);
+        originalNodes.forEach((n) => {
+          if (!waveSet.has(n.id)) muted.add(n.id);
+        });
+      }
+
+      if (reviewModeEnabled && selectedNodeId) {
+        const chain = relatedChain(selectedNodeId);
+        cy.nodes().forEach((n) => {
+          if (!chain.has(n.id())) muted.add(n.id());
+        });
+        cy.edges().forEach((e) => {
+          const inChain = chain.has(e.source().id()) && chain.has(e.target().id());
+          if (!inChain) e.addClass("muted");
+        });
+      }
+
+      if (activePathIds.length > 1) {
+        const pathSet = new Set(activePathIds);
+        cy.nodes().forEach((n) => {
+          if (!pathSet.has(n.id())) muted.add(n.id());
+        });
+        cy.edges().forEach((e) => {
+          let onPathEdge = false;
+          for (let i = 0; i < activePathIds.length - 1; i += 1) {
+            if (e.source().id() === activePathIds[i] && e.target().id() === activePathIds[i + 1]) {
+              onPathEdge = true;
+              break;
+            }
+          }
+          if (!onPathEdge) e.addClass("muted");
+        });
+      }
+
+      cy.nodes().forEach((n) => {
+        if (muted.has(n.id())) n.addClass("muted");
+      });
+      cy.edges().forEach((e) => {
+        if (muted.has(e.source().id()) || muted.has(e.target().id())) e.addClass("muted");
+      });
+
+      notesByNode.forEach((note, fid) => {
+        if (note && note.text && !note.resolved) {
+          const n = cy.getElementById(fid);
+          if (n && n.length) n.addClass("note-open");
+        }
+      });
+
+      if (executionWaves.length) {
+        renderWaveLegend();
+      }
+    }
+
+    function shortestPath(fromId, toId) {
+      if (!fromId || !toId || !nodeMap.has(fromId) || !nodeMap.has(toId)) return [];
+      const q = [fromId];
+      const parent = new Map([[fromId, ""]]);
+      let found = false;
+      while (q.length && !found) {
+        const curr = q.shift();
+        for (const nxt of successorsMap.get(curr) || []) {
+          if (parent.has(nxt)) continue;
+          parent.set(nxt, curr);
+          if (nxt === toId) { found = true; break; }
+          q.push(nxt);
+        }
+      }
+      if (!parent.has(toId)) return [];
+      const path = [];
+      let cur = toId;
+      while (cur) { path.push(cur); cur = parent.get(cur); }
+      return path.reverse();
+    }
+
+    function highlightPath(pathIds) {
+      if (!cy) return;
+      cy.elements().removeClass("path-node path-edge");
+      activePathIds = Array.isArray(pathIds) ? [...pathIds] : [];
+      applyViewFilters();
+      if (!pathIds.length) return;
+      const set = new Set(pathIds);
+      cy.nodes().forEach((n) => { if (set.has(n.id())) n.addClass("path-node"); });
+      for (let i = 0; i < pathIds.length - 1; i += 1) {
+        const e = cy.edges().filter((ed) => ed.source().id() === pathIds[i] && ed.target().id() === pathIds[i + 1]);
+        e.addClass("path-edge");
+      }
+      statusEl.textContent = `Path: ${pathIds.join(" -> ")}`;
+    }
+
+    function criticalPath() {
+      const indegree = new Map();
+      const dist = new Map();
+      const parent = new Map();
+      const q = [];
+      originalNodes.forEach((n) => {
+        indegree.set(n.id, (predecessorsMap.get(n.id) || new Set()).size);
+        dist.set(n.id, 0);
+        parent.set(n.id, "");
+      });
+      indegree.forEach((d, id) => { if (d === 0) q.push(id); });
+      const topo = [];
+      while (q.length) {
+        const cur = q.shift();
+        topo.push(cur);
+        for (const nxt of successorsMap.get(cur) || []) {
+          if ((dist.get(cur) + 1) > dist.get(nxt)) {
+            dist.set(nxt, dist.get(cur) + 1);
+            parent.set(nxt, cur);
+          }
+          indegree.set(nxt, indegree.get(nxt) - 1);
+          if (indegree.get(nxt) === 0) q.push(nxt);
+        }
+      }
+      if (!topo.length) return [];
+      let end = topo[0];
+      topo.forEach((id) => { if (dist.get(id) > dist.get(end)) end = id; });
+      const path = [];
+      let cur = end;
+      while (cur) { path.push(cur); cur = parent.get(cur); }
+      return path.reverse();
+    }
+
+    function highlightCritical(pathIds) {
+      if (!cy) return;
+      cy.elements().removeClass("critical-node critical-edge");
+      if (!pathIds.length) return;
+      const set = new Set(pathIds);
+      cy.nodes().forEach((n) => { if (set.has(n.id())) n.addClass("critical-node"); });
+      for (let i = 0; i < pathIds.length - 1; i += 1) {
+        const e = cy.edges().filter((ed) => ed.source().id() === pathIds[i] && ed.target().id() === pathIds[i + 1]);
+        e.addClass("critical-edge");
+      }
+    }
+
+    function computeNodeConflictCounts() {
+      nodeConflictCount = new Map();
+      originalNodes.forEach((n) => nodeConflictCount.set(n.id, 0));
+      for (let i = 0; i < originalNodes.length; i += 1) {
+        const a = originalNodes[i];
+        const af = new Set(a.file_scope || []);
+        if (!af.size) continue;
+        for (let j = i + 1; j < originalNodes.length; j += 1) {
+          const b = originalNodes[j];
+          const bf = new Set(b.file_scope || []);
+          if (!bf.size) continue;
+          const overlap = Array.from(af).some((f) => bf.has(f));
+          if (overlap) {
+            nodeConflictCount.set(a.id, (nodeConflictCount.get(a.id) || 0) + 1);
+            nodeConflictCount.set(b.id, (nodeConflictCount.get(b.id) || 0) + 1);
+          }
+        }
+      }
+    }
+
+    function waveColorWithRisk(waveIdx, risk) {
+      // Keep visual grouping wave-first; risk is surfaced in conflict panel.
+      return waveColor(waveIdx);
+    }
+
+    function downloadText(filename, text, mime) {
+      const blob = new Blob([text], { type: mime });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function renderDetails(node) {
+      if (!node) {
+        detailsEl.innerHTML = "<h3>Node Details</h3><p>Double click a node to open details.</p>";
+        setWhyBlocked("");
+        return;
+      }
+
+      selectedNodeId = node.id;
+      setWhyBlocked(node.id);
+      const directDeps = Array.from(predecessorsMap.get(node.id) || []).sort();
+      const directDependents = Array.from(successorsMap.get(node.id) || []).sort();
+      const allDeps = getDependenciesTransitive(node.id);
+      const allDependents = getDependentsTransitive(node.id);
+      const wave = (waveIndexByNode.get(node.id) ?? -1) + 1;
+      const depth = depthByNode.get(node.id) ?? 0;
+      const note = notesByNode.get(node.id) || { text: "", resolved: false };
+      const tests = Array.isArray(node.test_cases) ? node.test_cases : [];
+      const testList = tests.length
+        ? `<ul>${tests.map((t) => `<li><span class='mono'>${escapeHtml(t.id || "-")}</span>: ${escapeHtml(t.description || "")}</li>`).join("")}</ul>`
+        : "<em>None</em>";
+
+      const cA = compareA ? nodeMap.get(compareA) : null;
+      const cB = compareB ? nodeMap.get(compareB) : null;
+      const compareHtml = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;">
+          <div style="border:1px solid var(--line);border-radius:8px;padding:6px;"><strong>A</strong><br>${cA ? `${escapeHtml(cA.id)}<br><span class="mono">W${(waveIndexByNode.get(cA.id) ?? 0) + 1}</span>` : "<em>none</em>"}</div>
+          <div style="border:1px solid var(--line);border-radius:8px;padding:6px;"><strong>B</strong><br>${cB ? `${escapeHtml(cB.id)}<br><span class="mono">W${(waveIndexByNode.get(cB.id) ?? 0) + 1}</span>` : "<em>none</em>"}</div>
+        </div>
+      `;
+
+      detailsEl.innerHTML = `
+        <h3>${escapeHtml(node.id)} <span class="mono">${escapeHtml(node.spec_ref || "")}</span></h3>
+        <p>${escapeHtml(node.description || "No description")}</p>
+        <p><strong>Status:</strong> ${escapeHtml(node.status || "unknown")}</p>
+        ${compareHtml}
+        <div class="btn-row">
+          <button data-pin-a="${escapeHtml(node.id)}">Pin as A</button>
+          <button data-pin-b="${escapeHtml(node.id)}">Pin as B</button>
+        </div>
+        <p><strong>Wave:</strong> ${wave > 0 ? wave : "n/a"} | <strong>Depth:</strong> ${depth}</p>
+        <p><strong>Direct Dependencies</strong></p>
+        ${asList(directDeps)}
+        <p><strong>All Dependencies (transitive)</strong></p>
+        ${asList(allDeps)}
+        <p><strong>Direct Dependents</strong></p>
+        ${asList(directDependents)}
+        <p><strong>All Dependents (transitive)</strong></p>
+        ${asList(allDependents)}
+        <p><strong>File Scope</strong></p>
+        ${asList(node.file_scope)}
+        <p><strong>Acceptance Criteria</strong></p>
+        ${asList(node.acceptance_criteria)}
+        <p><strong>Test Cases</strong></p>
+        ${testList}
+        <p><strong>Reviewer Note</strong></p>
+        <textarea id="noteText">${escapeHtml(note.text || "")}</textarea>
+        <div class="btn-row">
+          <label><input id="noteResolved" type="checkbox" ${note.resolved ? "checked" : ""} /> Resolved</label>
+          <button data-save-note="${escapeHtml(node.id)}">Save Note</button>
+        </div>
+      `;
+    }
+
+    function focusFeature(rawQuery) {
+      if (!cy) return;
+      const q = String(rawQuery || "").trim();
+      if (!q) return;
+
+      const exact = nodeMap.has(q) ? q : null;
+      const qLower = q.toLowerCase();
+      const partial = exact || originalNodes.find((n) => n.id.toLowerCase().includes(qLower))?.id;
+      const targetId = partial || originalNodes.find((n) => String(n.description || "").toLowerCase().includes(qLower))?.id;
+
+      if (!targetId) {
+        statusEl.textContent = `No feature match for "${q}"`;
+        return;
+      }
+
+      const n = cy.getElementById(targetId);
+      if (!n || !n.length) return;
+
+      selectedNodeId = targetId;
+      cy.elements().unselect();
+      n.select();
+      highlightDependencies(targetId);
+      applyViewFilters();
+      closeDrawer();
+      cy.animate({ center: { eles: n }, zoom: Math.max(1.02, cy.zoom()) }, { duration: 280 });
+      statusEl.textContent = `Focused ${targetId}`;
+    }
+
+    function clearFocus() {
+      if (!cy) return;
+      selectedNodeId = "";
+      activePathIds = [];
+      cy.elements().unselect();
+      cy.elements().removeClass("dep-in dep-out dep-focus path-node path-edge critical-node critical-edge");
+      applyViewFilters();
+      statusEl.textContent = "Focus cleared.";
+      closeDrawer();
+      renderDetails(null);
+    }
+
+    function renderGraph(data) {
+      if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
+        throw new Error("Invalid format. JSON must contain nodes[] and edges[].");
+      }
+
+      originalNodes = data.nodes;
+      originalEdges = data.edges;
+      nodeMap = new Map(originalNodes.map((n) => [n.id, n]));
+      buildAdjacency();
+      executionWaves = computeExecutionWaves();
+      computeNodeConflictCounts();
+      renderWaveList();
+      renderWaveLegend();
+      renderWaveFocusOptions();
+      selectedNodeId = "";
+
+      totalNodesEl.textContent = String(data.stats?.total_nodes ?? originalNodes.length);
+      totalEdgesEl.textContent = String(data.stats?.total_edges ?? originalEdges.length);
+      dagFlagEl.textContent = String(data.stats?.is_dag ?? "unknown");
+      totalWavesEl.textContent = String(executionWaves.length);
+
+      if (cy) cy.destroy();
+
+      const elements = [
+        ...originalNodes.map((n) => {
+          const w = waveIndexByNode.get(n.id) ?? 0;
+          const [bg, border] = waveColorWithRisk(w, nodeConflictCount.get(n.id) || 0);
+          return {
+            data: {
+              id: n.id,
+              label: `W${w + 1} | ${n.id}\n${short(n.description, 40)}`,
+              description: n.description || "",
+              risk: nodeConflictCount.get(n.id) || 0,
+              bg,
+              border
+            }
+          };
+        }),
+        ...originalEdges.map((e, idx) => ({ data: { id: `e${idx}`, source: e.from, target: e.to } }))
+      ];
+
+      cy = cytoscape({
+        container: graphEl,
+        elements,
+        style: [
+          {
+            selector: "node",
+            style: {
+              shape: "round-rectangle",
+              width: 220,
+              height: 96,
+              "background-color": "data(bg)",
+              "border-width": 2.2,
+              "border-color": "data(border)",
+              label: "data(label)",
+              color: "#0f172a",
+              "text-wrap": "wrap",
+              "text-max-width": 188,
+              "text-valign": "center",
+              "text-halign": "center",
+              "font-family": "Manrope",
+              "font-size": "12px"
+            }
+          },
+          {
+            selector: "edge",
+            style: {
+              width: 2,
+              "line-color": "#94a3b8",
+              "target-arrow-color": "#94a3b8",
+              "target-arrow-shape": "triangle",
+              "curve-style": "bezier"
+            }
+          },
+          { selector: ".filtered-out", style: { display: "none" } },
+          { selector: ".muted", style: { opacity: 0.16 } },
+          { selector: ".path-node", style: { "border-color": "#4338ca", "border-width": 4 } },
+          { selector: ".path-edge", style: { "line-color": "#4338ca", "target-arrow-color": "#4338ca", width: 4 } },
+          { selector: ".critical-node", style: { "background-color": "#fffbeb", "border-color": "#b45309", "border-width": 4 } },
+          { selector: ".critical-edge", style: { "line-color": "#b45309", "target-arrow-color": "#b45309", width: 4 } },
+          { selector: ".note-open", style: { "overlay-color": "#f59e0b", "overlay-padding": 3, "overlay-opacity": 0.15 } },
+          {
+            selector: "node:selected",
+            style: {
+              "border-color": "#0f172a",
+              "border-width": 3.5
+            }
+          },
+          {
+            selector: ".dep-focus",
+            style: {
+              "border-width": 3.6,
+              "border-color": "#0f172a"
+            }
+          },
+          {
+            selector: "node.dep-in",
+            style: {
+              "border-color": "#b45309"
+            }
+          },
+          {
+            selector: "node.dep-out",
+            style: {
+              "border-color": "#0f766e"
+            }
+          },
+          {
+            selector: "edge.dep-in",
+            style: {
+              "line-color": "#b45309",
+              "target-arrow-color": "#b45309",
+              width: 3
+            }
+          },
+          {
+            selector: "edge.dep-out",
+            style: {
+              "line-color": "#0f766e",
+              "target-arrow-color": "#0f766e",
+              width: 3
+            }
+          }
+        ],
+        minZoom: 0.35,
+        maxZoom: 2.2,
+        wheelSensitivity: 0.18
+      });
+
+      closeDrawer();
+      renderDetails(null);
+      applyViewFilters();
+
+      cy.on("tap", "node", (evt) => {
+        const id = evt.target.id();
+        const now = Date.now();
+        const isDoubleClick = lastNodeTap.id === id && (now - lastNodeTap.time) < 320;
+        lastNodeTap = { id, time: now };
+
+        selectedNodeId = id;
+        highlightDependencies(id);
+        applyViewFilters();
+        renderDetails(nodeMap.get(id));
+        if (isDoubleClick) {
+          openDrawer();
+        } else {
+          closeDrawer();
+        }
+      });
+
+      cy.on("tap", (evt) => {
+        if (evt.target === cy) {
+          selectedNodeId = "";
+          cy.elements().unselect();
+          cy.elements().removeClass("dep-in dep-out dep-focus path-node path-edge critical-node critical-edge");
+          applyViewFilters();
+          renderDetails(null);
+          closeDrawer();
+          hoverTipEl.classList.remove("show");
+          statusEl.textContent = "Ready. Click a node to open details.";
+        }
+      });
+
+      cy.on("mouseover", "node", (evt) => {
+        const n = nodeMap.get(evt.target.id());
+        if (!n) return;
+        hoverTipEl.textContent = `${n.id}: ${n.description || ""}`;
+        hoverTipEl.classList.add("show");
+      });
+
+      cy.on("mousemove", "node", (evt) => {
+        const raw = evt.originalEvent;
+        const rect = graphEl.getBoundingClientRect();
+        if (!raw || !rect) return;
+        const x = raw.clientX - rect.left;
+        const y = raw.clientY - rect.top;
+        hoverTipEl.style.left = `${Math.max(8, x + 16)}px`;
+        hoverTipEl.style.top = `${Math.max(8, y + 12)}px`;
+      });
+
+      cy.on("mouseout", "node", () => {
+        hoverTipEl.classList.remove("show");
+      });
+
+      statusEl.textContent = `Loaded ${executionWaves.length} waves.`;
+    }
+
+    async function loadFileAndRender(file) {
+      if (!file) {
+        statusEl.textContent = "Please choose a JSON file first.";
+        return;
+      }
+      try {
+        const raw = await file.text();
+        const json = JSON.parse(raw);
+        if (fileNameEl) fileNameEl.textContent = file.name || "Selected JSON";
+        compareA = "";
+        compareB = "";
+        selectedNodeId = "";
+        activePathIds = [];
+        notesByNode = new Map();
+        try {
+          const stored = JSON.parse(localStorage.getItem("dag_viewer_notes") || "{}");
+          Object.entries(stored).forEach(([k, v]) => notesByNode.set(k, v));
+      } catch {}
+        reviewModeEnabled = true;
+        waveFocusSelectEl.value = "";
+        waveFocus = "";
+        uploadGateEl.classList.add("hidden");
+        topShellEl.classList.remove("hidden");
+        leftPanelEl.classList.remove("hidden");
+        renderGraph(json);
+        queueLayout();
+      } catch (err) {
+        statusEl.textContent = `Could not load JSON: ${err.message}`;
+      }
+    }
+
+    document.getElementById("loadBtn").addEventListener("click", async () => {
+      const file = fileInputEl.files?.[0];
+      await loadFileAndRender(file);
+    });
+
+    document.getElementById("layoutBtn").addEventListener("click", () => runLayout());
+    document.getElementById("focusBtn").addEventListener("click", () => focusFeature(featureSearchEl.value));
+    document.getElementById("clearFocusBtn").addEventListener("click", () => clearFocus());
+    waveFocusSelectEl.addEventListener("change", () => {
+      waveFocus = waveFocusSelectEl.value;
+      applyViewFilters();
+    });
+    
+    pathFindBtnEl.addEventListener("click", () => {
+      const fromId = pathFromInputEl.value.trim();
+      const toId = pathToInputEl.value.trim();
+      const p = shortestPath(fromId, toId);
+      highlightPath(p);
+      if (!p.length) statusEl.textContent = `No directed path from ${fromId} to ${toId}.`;
+    });
+    pathClearBtnEl.addEventListener("click", () => {
+      if (!cy) return;
+      activePathIds = [];
+      cy.elements().removeClass("path-node path-edge");
+      applyViewFilters();
+      statusEl.textContent = "Path highlight cleared.";
+    });
+    exportPngBtnEl.addEventListener("click", () => {
+      if (!cy) return;
+      const dataUrl = cy.png({ full: false, scale: 2, bg: "#ffffff" });
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = "dag-snapshot.png";
+      a.click();
+    });
+    exportJsonBtnEl.addEventListener("click", () => {
+      const payload = {
+        selectedNodeId,
+        reviewModeEnabled,
+        waveFocus,
+        compareA,
+        compareB,
+        notes: Object.fromEntries(notesByNode.entries())
+      };
+      downloadText("dag-review-snapshot.json", JSON.stringify(payload, null, 2), "application/json");
+    });
+    let searchDebounce;
+    featureSearchEl.addEventListener("input", () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => {
+        const q = featureSearchEl.value.trim();
+        if (!q || topShellEl.classList.contains("hidden")) return;
+        focusFeature(q);
+      }, 380);
+    });
+    featureSearchEl.addEventListener("keydown", (evt) => {
+      if (evt.key === "Enter") focusFeature(featureSearchEl.value);
+    });
+
+    wavesEl.addEventListener("click", (evt) => {
+      const btn = evt.target.closest("[data-node-id]");
+      if (!btn) return;
+      const fid = btn.getAttribute("data-node-id");
+      featureSearchEl.value = fid;
+      focusFeature(fid);
+    });
+
+    waveLegendEl.addEventListener("click", (evt) => {
+      const item = evt.target.closest("[data-wave-index]");
+      if (!item) return;
+      const idx = item.getAttribute("data-wave-index");
+      waveFocus = String(waveFocus) === String(idx) ? "" : String(idx);
+      waveFocusSelectEl.value = waveFocus;
+      applyViewFilters();
+    });
+
+    detailsEl.addEventListener("click", (evt) => {
+      const pinA = evt.target.closest("[data-pin-a]");
+      const pinB = evt.target.closest("[data-pin-b]");
+      const save = evt.target.closest("[data-save-note]");
+      if (pinA) {
+        compareA = pinA.getAttribute("data-pin-a") || "";
+        if (selectedNodeId && nodeMap.has(selectedNodeId)) renderDetails(nodeMap.get(selectedNodeId));
+        statusEl.textContent = `Pinned ${compareA} as A`;
+        return;
+      }
+      if (pinB) {
+        compareB = pinB.getAttribute("data-pin-b") || "";
+        if (selectedNodeId && nodeMap.has(selectedNodeId)) renderDetails(nodeMap.get(selectedNodeId));
+        statusEl.textContent = `Pinned ${compareB} as B`;
+        return;
+      }
+      if (save) {
+        const fid = save.getAttribute("data-save-note");
+        if (!fid) return;
+        const text = detailsEl.querySelector("#noteText")?.value || "";
+        const resolved = !!detailsEl.querySelector("#noteResolved")?.checked;
+        notesByNode.set(fid, { text, resolved });
+        localStorage.setItem("dag_viewer_notes", JSON.stringify(Object.fromEntries(notesByNode.entries())));
+        applyViewFilters();
+        setWhyBlocked(selectedNodeId);
+        statusEl.textContent = `Saved note for ${fid}`;
+      }
+    });
+
+    document.getElementById("closeDrawerBtn").addEventListener("click", closeDrawer);
+    backdropEl.addEventListener("click", closeDrawer);
+    browseBtnEl.addEventListener("click", () => gateFileInputEl.click());
+    gateFileInputEl.addEventListener("change", async () => {
+      await loadFileAndRender(gateFileInputEl.files?.[0]);
+    });
+    filePickBtnEl.addEventListener("click", () => fileInputEl.click());
+    fileInputEl.addEventListener("change", async () => {
+      await loadFileAndRender(fileInputEl.files?.[0]);
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropZoneEl.addEventListener(eventName, (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        dropZoneEl.classList.add("active");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropZoneEl.addEventListener(eventName, (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        dropZoneEl.classList.remove("active");
+      });
+    });
+
+    dropZoneEl.addEventListener("drop", async (evt) => {
+      const file = evt.dataTransfer?.files?.[0];
+      await loadFileAndRender(file);
+    });
+
+    window.addEventListener("keydown", (evt) => {
+      if (evt.key === "Escape") closeDrawer();
+    });
+
+    // RAPIDS Config Auto-Load Integration
+    const rapidsLoader = new RAPIDSLoader('../rapids-config.json');
+
+    async function initializeFromConfig() {
+      statusEl.textContent = "Initializing RAPIDS config...";
+
+      try {
+        await rapidsLoader.init();
+
+        if (!rapidsLoader.isConfigured()) {
+          // Config not found or failed - show upload gate
+          statusEl.textContent = "Load a DAG JSON file to start exploring.";
+          return;
+        }
+
+        const status = rapidsLoader.getStatus();
+        console.log('[DAG Viewer] RAPIDS config status:', status);
+
+        // Update UI based on config
+        if (!rapidsLoader.shouldShowUploadGate()) {
+          // Auto-load mode - hide upload gate and load from config
+          uploadGateEl.classList.add("hidden");
+          topShellEl.classList.remove("hidden");
+          leftPanelEl.classList.remove("hidden");
+
+          statusEl.textContent = `Loading ${status.projectName || 'project'}...`;
+
+          // Auto-load DAG if configured
+          if (rapidsLoader.shouldAutoLoad('dag')) {
+            try {
+              const dagData = await rapidsLoader.loadDAG();
+              fileNameEl.textContent = `${status.projectName} (auto-loaded)`;
+              compareA = "";
+              compareB = "";
+              selectedNodeId = "";
+              activePathIds = [];
+              notesByNode = new Map();
+              try {
+                const stored = JSON.parse(localStorage.getItem("dag_viewer_notes") || "{}");
+                Object.entries(stored).forEach(([k, v]) => notesByNode.set(k, v));
+              } catch {}
+              reviewModeEnabled = true;
+              waveFocusSelectEl.value = "";
+              waveFocus = "";
+              renderGraph(dagData);
+              queueLayout();
+              statusEl.textContent = `Loaded ${status.projectName} — ${executionWaves.length} waves`;
+            } catch (err) {
+              console.error('[DAG Viewer] Auto-load failed:', err);
+              statusEl.textContent = `Auto-load failed: ${err.message}. Use manual file selection.`;
+              uploadGateEl.classList.remove("hidden");
+            }
+          } else {
+            statusEl.textContent = `Config loaded. Choose a DAG file to visualize.`;
+          }
+        } else {
+          // Manual mode - show upload gate
+          statusEl.textContent = "Load a DAG JSON file to start exploring.";
+        }
+      } catch (err) {
+        console.error('[DAG Viewer] Config init error:', err);
+        statusEl.textContent = "Config load failed. Use manual file selection.";
+      }
+    }
+
+    // Initialize on page load
+    initializeFromConfig();
+  </script>
+</body>
+</html>

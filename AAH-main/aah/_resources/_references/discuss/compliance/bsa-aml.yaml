@@ -1,0 +1,30 @@
+schema_version: "1.0"
+regime: bsa-aml
+trigger_signals:
+  - bsa
+  - kyc
+  - aml
+  - bank secrecy
+  - anti-money laundering
+  - know your customer
+  - ofac
+  - sanctions
+  - cdd
+  - edd
+  - fincen
+  - customer identification
+  - beneficial ownership
+  - sar
+  - suspicious activity
+
+mandates:
+  - mandate_id: CC-BSA-001
+    statement: "Complete audit trail of all customer identity verification decisions must be retained for minimum 5 years per BSA record retention requirements (31 CFR 1020.410)."
+  - mandate_id: CC-BSA-002
+    statement: "OFAC sanctions screening must execute before any customer onboarding approval is finalized. Screening failure must block approval (fail-closed)."
+  - mandate_id: CC-BSA-003
+    statement: "Customer Identification Program (CIP) verification must be completed before account opening per BSA 31 CFR 1020.220. No provisional access without identity verification."
+  - mandate_id: CC-BSA-004
+    statement: "Suspicious Activity Report (SAR) filing status and investigation triggers must never be disclosed to the subject. LLM outputs visible to customers must not reference SAR-related data (31 USC 5318(g)(2))."
+  - mandate_id: CC-BSA-005
+    statement: "Beneficial ownership data must be encrypted at rest and in transit with access logging per FinCEN CDD Rule requirements."

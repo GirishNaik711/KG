@@ -1,0 +1,17 @@
+schema_version: "1.0"
+regime: pci-dss
+trigger_signals:
+  - pci
+  - pci-dss
+  - cardholder
+  - payment card
+  - credit card
+  - card data
+
+mandates:
+  - mandate_id: CC-PCI-001
+    statement: "Cardholder data must never appear in LLM prompts or context windows."
+  - mandate_id: CC-PCI-002
+    statement: "All cardholder data environments must be network-segmented from general compute."
+  - mandate_id: CC-PCI-003
+    statement: "Encryption keys for cardholder data must be managed in a certified HSM or equivalent key management service."

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAPIDS Greenfield Project</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --surface: #ffffff;
+      --surface-soft: #f7f9fc;
+      --ink: #111827;
+      --muted: #64748b;
+      --subtle: #94a3b8;
+      --line: #d8e0ea;
+      --brand: #155e75;
+      --brand-strong: #0f3f52;
+      --accent: #0f766e;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 14px 40px rgba(15, 23, 42, 0.12);
+      --radius: 8px;
+      --radius-lg: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Manrope, system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(216, 224, 234, 0.55) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(216, 224, 234, 0.55) 1px, transparent 1px),
+        var(--bg);
+      background-size: 36px 36px;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 64px 48px;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+    }
+
+    .icon {
+      font-size: 5rem;
+      margin-bottom: 24px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--brand);
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 1.2rem;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    .coming-soon-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--accent), #059669);
+      color: white;
+      padding: 12px 32px;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
+    }
+
+    .description {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-bottom: 32px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, var(--brand), var(--accent));
+      color: white;
+      text-decoration: none;
+      border-radius: var(--radius);
+      font-weight: 700;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .back-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(21, 94, 117, 0.3);
+    }
+
+    .back-button:active {
+      transform: translateY(0);
+    }
+
+    .features-preview {
+      margin-top: 48px;
+      padding-top: 48px;
+      border-top: 2px solid var(--line);
+    }
+
+    .features-preview h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 24px;
+    }
+
+    .features-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      text-align: left;
+    }
+
+    .feature-item {
+      background: var(--surface-soft);
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+    }
+
+    .feature-item strong {
+      color: var(--brand);
+      font-weight: 650;
+    }
+
+    .feature-item p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="icon">🌱</div>
+      <h1>Greenfield Project Viewer</h1>
+      <p class="subtitle">Advanced project insights and visualization</p>
+
+      <div class="coming-soon-badge">Coming Soon</div>
+
+      <p class="description">
+        This viewer will provide comprehensive insights into your greenfield project, including
+        architecture blueprints, design decisions, implementation progress, and quality metrics.
+        We're building tools to help you visualize and understand your project from the ground up.
+      </p>
+
+      <a href="../index.html" class="back-button">
+        <span>←</span> Back to Dashboard
+      </a>
+
+      <div class="features-preview">
+        <h2>📋 Planned Features</h2>
+        <div class="features-list">
+          <div class="feature-item">
+            <strong>🏗️ Architecture Blueprint</strong>
+            <p>Visualize your planned system architecture and component relationships</p>
+          </div>
+          <div class="feature-item">
+            <strong>📊 Implementation Progress</strong>
+            <p>Track development progress across all features and modules</p>
+          </div>
+          <div class="feature-item">
+            <strong>✅ Quality Dashboard</strong>
+            <p>Monitor test coverage, code quality metrics, and compliance status</p>
+          </div>
+          <div class="feature-item">
+            <strong>📝 Design Decisions</strong>
+            <p>Browse ADRs and understand the reasoning behind architectural choices</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

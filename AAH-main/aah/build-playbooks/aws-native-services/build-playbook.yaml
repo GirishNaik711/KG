@@ -1,0 +1,162 @@
+schema_version: "2.0"
+technology_domain: aws-native-services
+name: "AWS Native Services Build Playbook"
+description: >
+  The AWS AI/agentic delivery archetype: the services AAH can provision, connect
+  to, validate (/aah-access), and deploy (aah-deploy) end-to-end, plus the
+  pre-baked AgentCore/Bedrock agentic pathways. Select alongside an
+  application/infra archetype for AWS-grounded delivery. Some patterns enumerate a
+  supported service inline (no references — they only shape discuss); others point
+  at skill docs that carry build-time contracts (used across plan and build too).
+
+published: true
+
+# NOTE: keywords for this archetype live ONLY in _registry.yaml (never in this body).
+
+# The single imperative agents apply. `description` above says WHAT this covers;
+# this says WHAT TO DO. No restating.
+guidance: >
+  For a service-shaped decision, constrain discuss phase options to the AWS services named in the
+  matching pattern's description — these are the only AWS services AAH can provision/validate and
+  deploy. If you propose AWS services outside those referenced in this playbook, the harness doesn't have the ability to validate or deploy them, and the proposal is out of scope for this archetype.
+  This is a closed, enumerated catalog, not a set of illustrative examples: a plausible-sounding or
+  commonly-recommended AWS service that is not named above (e.g. a turnkey managed offering that
+  composes two of these primitives) is out of scope by default — do not give it the benefit of the
+  doubt because it sounds architecturally reasonable. Only an option that is clearly the same
+  resource as a named pattern under a different label counts as in-scope.
+  Where a pattern has references, read
+  them and treat them as authoritative (discuss, plan and build included) — do not re-derive
+  what they specify. When this playbook is selected with another, the effective
+  scope is the intersection of both.
+
+# Phase model for references (no per-reference read_in bookkeeping):
+#   - a pattern with NO references is inherently discuss-only (nothing to read later).
+#   - references default to ALL phases (discuss + plan + build).
+#   - a reference useful ONLY for discuss framing carries `phase: discuss`.
+
+patterns:
+  # ── Service-enablement patterns (enumerated inline, discuss-only) ──────────
+  - name: LLM Inference on Bedrock
+    description: >
+      Use Amazon Bedrock as the managed foundation-model inference provider
+      (per-model access validated); a centralized LLM proxy/gateway on AWS
+      resolves to Bedrock.
+    when_to_apply: >
+      Any AWS-grounded decision about the LLM inference provider or model source.
+    anti_patterns:
+      - Self-hosted GPU inference on EC2 when Bedrock covers the model
+      - Third-party model gateways/proxies for an AWS-grounded build
+
+  - name: State & Data Stores
+    description: >
+      Persist relational state on Amazon RDS / Aurora PostgreSQL and
+      document/KV/session/audit state on Amazon DynamoDB; credentials come from
+      AWS Secrets Manager, not config.
+    when_to_apply: >
+      Any AWS-grounded decision about the primary database, state/session/audit store.
+    anti_patterns:
+      - Self-hosted Postgres on EC2 when RDS/Aurora is available and validated
+      - Storing DB credentials in env/config instead of Secrets Manager
+
+  - name: Object Storage
+    description: >
+      Store documents, artifacts, and exports in Amazon S3 (verified by
+      head-bucket + prefix listing).
+    when_to_apply: >
+      Any AWS-grounded decision about document, artifact, or export storage.
+    anti_patterns:
+      - Bespoke blob storage on EC2 volumes when S3 is the supported target
+
+  - name: Search & Vector Index
+    description: >
+      Use Amazon OpenSearch for search and vector-index workloads (SigV4
+      health-checked).
+    when_to_apply: >
+      Any AWS-grounded decision about a search index or vector store.
+    anti_patterns:
+      - Self-hosted Elasticsearch when OpenSearch is the supported AWS target
+
+  - name: Messaging & Event Streaming
+    description: >
+      Use Amazon MSK (managed Kafka) for event streaming (IAM auth or VPC-secured
+      plaintext).
+    when_to_apply: >
+      Any AWS-grounded decision about messaging or an event stream.
+    anti_patterns:
+      - Self-managed Kafka brokers on EC2 when MSK is available
+
+  - name: Guardrails & Safety
+    description: >
+      Apply Amazon Bedrock Guardrails as the LLM safety/PII layer (validated by
+      listing or describing a guardrail).
+    when_to_apply: >
+      Any AWS-grounded decision about an LLM guardrail, safety, or PII service.
+    anti_patterns:
+      - Prompt-only safety with no enforced guardrail service on AWS
+
+  - name: Observability
+    description: >
+      Emit metrics/logs/traces to Amazon CloudWatch; AgentCore Observability
+      writes to CloudWatch (reachability validated via list-metrics).
+    when_to_apply: >
+      Any AWS-grounded decision about the tracing/observability/logging stack.
+    anti_patterns:
+      - Standing up a separate observability plane when CloudWatch is the AWS-native path
+
+  - name: Compute & Deploy Targets
+    description: >
+      Deploy through the two AWS targets aah-deploy supports — ECS Fargate + ALB
+      (ecs-express: ECR + CodeBuild + CloudWatch Logs) and the cloudless AgentCore
+      path (managed agent runtime + ECR + S3 + CloudWatch Logs). Deploy mechanics
+      are harness-owned (aah run core.deploy.*).
+    when_to_apply: >
+      Any AWS-grounded decision about where the built service is deployed and run.
+    anti_patterns:
+      - Authoring per-app deploy scripts instead of using aah run core.deploy.*
+      - Choosing an AWS compute service aah-deploy cannot target (only ECS Fargate and AgentCore are wired)
+
+  # ── Agentic-pathway patterns (reference-backed, all phases) ────────────────
+  - name: Agent Runtime on AgentCore
+    description: >
+      Host the agent on Bedrock AgentCore Runtime with one primary protocol
+      (HTTP / AG-UI / A2A / MCP) per the framework; additional MCP/A2A runtimes are
+      added only when a feature calls for them.
+    when_to_apply: >
+      Any AWS-grounded decision about where an agent, tool server, or
+      agent-to-agent endpoint runs.
+    anti_patterns:
+      - Hand-rolling agent hosting on raw EC2/Lambda when AgentCore is the pathway
+      - Header-based auth inside the container (AgentCore strips custom headers → 401)
+      - Adding A2A/MCP runtimes speculatively rather than per feature
+    references:
+      - kind: doc
+        ref: "aah/_resources/_references/build-playbooks/aws-native-services/agentcore-implement.md"
+      - kind: url
+        ref: "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html"
+        phase: discuss   # overview page — framing only, no build-time contract
+
+  - name: Managed Memory via AgentCore
+    description: >
+      Use AgentCore Memory (managed event store + extraction) via the two-callback
+      seam — read before the LLM call, write after the turn.
+    when_to_apply: >
+      Any AWS-grounded agent needing memory that persists across sessions.
+    anti_patterns:
+      - Wrapping memory in a bespoke class instead of the read-before/write-after callbacks
+      - Rolling your own vector store when a built-in strategy covers the case
+    references:
+      - kind: doc
+        ref: "aah/_resources/_references/build-playbooks/aws-native-services/agentcore-memory.md"
+
+  - name: MCP Tools via AgentCore Gateway
+    description: >
+      Connect the agent to existing/third-party MCP servers, or expose tools,
+      through AgentCore's MCP pathway rather than ad-hoc HTTP tool wiring.
+    when_to_apply: >
+      Any AWS-grounded agent that consumes or provides tools over MCP.
+    anti_patterns:
+      - Hand-rolling tool transport when MCP + AgentCore Gateway is available
+      - Using this pathway to build a NEW tool server (use agentcore-implement protocol=MCP instead)
+    references:
+      - kind: doc
+        ref: "aah/_resources/_references/build-playbooks/aws-native-services/mcp-integration.md"

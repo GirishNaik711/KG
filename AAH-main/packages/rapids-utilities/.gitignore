@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+*.pyo
+*.so
+*.dylib
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Rust
+target/
+
+# CodeMap database
+.codemap/
+
+# Benchmark repos (cloned for testing)
+benchmarks/repos/
+benchmarks/RESULTS.md

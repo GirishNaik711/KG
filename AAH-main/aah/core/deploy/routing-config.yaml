@@ -1,0 +1,134 @@
+# Deployment Routing Configuration
+# =================================
+# Single source of truth for deployment route → agent/template mapping.
+# Read by deploy_routing.py and referenced by aah-deploy and aah-plan skills.
+#
+# Adding a new route: Add an entry here. Skills automatically pick it up via
+# `get_route_config()` — no need to update hardcoded if/else in skill markdown.
+
+schema_version: "1.0"
+
+routes:
+  agentcore:
+    description: "Deploy a framework-agnostic AI agent to AWS Bedrock AgentCore Runtime (backend) + AWS Amplify Hosting (frontend)"
+    condition:
+      # AAH-native: the aah-discuss decision registry, NOT a DDR.
+      primary: "aah-discuss slug backend-compute-platform == agentcore-runtime"
+    constraints:
+      - "cloud must be aws"
+      - "agent code must expose a protocol contract (POST /invocations + GET /ping, @app.entrypoint, or FastMCP) — the build phase adds it"
+    agent_backend: aah-agentcore-deploy-engineer
+    agent_frontend: aah-amplify-deploy-engineer
+    frontend_capable: true  # backend (AgentCore) + frontend (Amplify) are both handled on this route
+    frontend_platform_derivation: "amplify"
+    plan_templates: []
+    plan_rules:
+      - "No Dockerfile for backend (AgentCore packages code via CodeZip) or frontend (Amplify hosts static build)"
+      - "Backend needs a protocol contract (HTTP/AG-UI/A2A/MCP) — established in the build phase (agentcore-implement skill)"
+      - "Deploy is ONE idempotent call: aah run core.deploy.agentcore_deploy up"
+      - "Browser callers reach the runtime via a SigV4 signing proxy behind API Gateway (the only front door)"
+      - "Memory is provisioned via the AgentCore CLI (agentcore add memory) and auto-injects MEMORY_<NAME>_ID"
+    user_callout: >
+      AAH will deploy your AI agent to AWS Bedrock AgentCore Runtime (managed, any framework —
+      Strands, LangGraph, Google ADK, OpenAI Agents, custom) and your frontend to AWS Amplify Hosting
+      (global CDN, auto-HTTPS). No Dockerfile needed for either layer. Pay-per-use backend, free-tier
+      frontend. Same AWS account and credentials for both.
+
+  cloudless:
+    description: "Deploy LangGraph agent to managed runtime (AgentCore / Agent Engine)"
+    condition:
+      primary: "DDR-SHARED-017 == cloudless-managed"
+      fallback: "DDR-L2-001 == langgraph (framework constraint)"
+    constraints:
+      - "DDR-L2-001 must be langgraph"
+      - "archetype must be ai-applications"
+    agent_backend: cloudless-deploy-engineer
+    agent_frontend: frontend-deploy-engineer
+    frontend_capable: false  # cloudless only deploys backend; frontend needs separate platform
+    frontend_platform_derivation: "cloud_target"  # aws → ecs-fargate, gcp → cloud-run
+    plan_templates:
+      - cloudless-feature.yaml
+      - cloudless-deploy-spec.yaml
+    plan_rules:
+      - "All features become LangGraph nodes in consolidated agent file"
+      - "No Dockerfile for backend (cloudless builds container automatically)"
+      - "No Terraform/IaC for agent runtime"
+      - "Deploy via: cloudless deploy <agent> --region <region>"
+    user_callout: >
+      Cloudless deployment is recommended for this project because it uses LangGraph.
+      Your agent will deploy to a fully managed runtime ({cloud_target_label}) with
+      zero infrastructure management. AAH handles everything automatically.
+
+  cloud-run:
+    description: "Deploy to GCP Cloud Run (source-based, no Dockerfile needed)"
+    condition:
+      primary: "DDR-SHARED-017 == cloud-run"
+    constraints:
+      - "cloud must be gcp"
+    agent_backend: cloudrun-deploy-engineer
+    agent_frontend: frontend-deploy-engineer
+    frontend_capable: true  # same platform handles both backend and frontend
+    frontend_platform_derivation: "same"  # frontend also goes to Cloud Run
+    plan_templates: []  # standard templates apply
+    plan_rules:
+      - "Standard feature decomposition"
+      - "No Dockerfile required (buildpacks handle it)"
+      - "Port 8080 convention ($PORT env var injected)"
+      - "Deploy via: gcloud run deploy --source ."
+    user_callout: >
+      AAH will deploy your application to GCP Cloud Run automatically.
+      No Dockerfile needed — Cloud Run auto-detects your framework and builds for you.
+      Scale to zero, pay-per-request, HTTPS by default.
+
+  ecs-express:
+    description: "Deploy to AWS ECS Fargate + ALB (CodeBuild for images, Fargate for compute)"
+    condition:
+      primary: "DDR-SHARED-017 == ecs-express-mode"
+    constraints:
+      - "cloud must be aws"
+    agent_backend: ecs-deploy-engineer
+    agent_frontend: frontend-deploy-engineer
+    frontend_capable: true  # same platform handles both backend and frontend
+    frontend_platform_derivation: "same"  # frontend also goes to ECS Fargate
+    plan_templates: []  # standard templates apply
+    plan_rules:
+      - "Standard feature decomposition"
+      - "Dockerfile required (generated if missing)"
+      - "Port 8080 convention ($PORT env var injected)"
+      - "Build via: AWS CodeBuild (remote, never local Docker)"
+      - "Deploy via: ECS Fargate + ALB"
+    user_callout: >
+      AAH will deploy your application to AWS ECS Fargate automatically.
+      Images built remotely via CodeBuild. ALB provides load balancing and health checks.
+      Dockerfile generated if missing.
+
+  standard:
+    description: "Generate IaC configs; user deploys themselves"
+    condition:
+      primary: "DDR-SHARED-017 == self-managed"
+    constraints: []
+    agent_backend: deploy-engineer
+    agent_frontend: null  # user handles frontend deployment
+    frontend_capable: false
+    frontend_platform_derivation: null
+    plan_templates: []  # standard templates apply
+    plan_rules:
+      - "Standard feature decomposition"
+      - "Generate Dockerfile, Terraform/IaC, CI/CD pipeline"
+      - "User runs deployment themselves"
+    user_callout: >
+      AAH will generate deployment configs (Dockerfile, Terraform, CI/CD pipelines)
+      but will NOT deploy automatically. You run the deployment yourself.
+
+# Frontend derivation rules (when route.frontend_capable = false)
+frontend_derivation:
+  description: >
+    When the backend route cannot deploy frontends (cloudless, standard),
+    the frontend platform is derived from the cloud target.
+  rules:
+    aws: ecs-fargate
+    gcp: cloud-run
+    amplify: amplify
+  note: >
+    Static hosting (S3+CDN / GCS+CDN) is only used when user explicitly opts in.
+    It is NOT auto-derived because most frontends need runtime env vars or SSR.

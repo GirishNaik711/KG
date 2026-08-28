@@ -1,0 +1,14 @@
+schema_version: "1.0"
+regime: sovereign-cloud
+trigger_signals:
+  - sovereign cloud
+  - data sovereignty
+  - government cloud
+  - national cloud
+  - azure government
+  - aws govcloud
+  - restricted cloud
+
+mandates:
+  - mandate_id: CC-INFRA-SOVEREIGN-001
+    statement: "All compute and storage must reside within the designated sovereign cloud boundary."

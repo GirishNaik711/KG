@@ -1,0 +1,117 @@
+# =============================================================================
+# RAPIDS Build Playbook Schema
+# =============================================================================
+# Build Playbooks hold curated engineering patterns, anti-patterns, and common
+# architectures for a technology domain (a project_type / horizontal). Each
+# playbook lives at build-playbooks/<technology-domain>/build-playbook.yaml
+# and is injected into SessionStart context when the project's technology
+# domain matches and `published: true`.
+#
+# Build Playbooks are the "how to build it well" layer. They are orthogonal to:
+#   - activity-library/ — which activities to run (the procedure)
+#   - domain-briefs/    — functional/industry domain knowledge (the problem space)
+# =============================================================================
+
+technology_domain:
+  type: string
+  required: true
+  description: >
+    Must match a project_types key in activity-library/_registry.yaml.
+
+name:
+  type: string
+  required: true
+  description: Human-readable playbook name.
+
+description:
+  type: string
+  required: true
+  description: One-paragraph summary of what this horizontal covers.
+
+published:
+  type: boolean
+  required: true
+  default: false
+  description: >
+    When false, the playbook loader skips this playbook (content exists but
+    is not injected into any session context). Use for drafts or gated content
+    awaiting review. When true, playbook is live and injected whenever
+    SessionStart is invoked for a project whose project_type matches.
+
+keywords:
+  type: object
+  required: false
+  description: >
+    Optional playbook-specific keyword overrides for activation-signal matching.
+    If omitted, the keywords from activity-library/_registry.yaml project_types
+    block are used.
+  properties:
+    strong:
+      type: list[string]
+      description: High-weight keywords; a single strong-match is sufficient to activate.
+    moderate:
+      type: list[string]
+      description: Supporting keywords; multiple moderate-matches accumulate signal.
+
+patterns:
+  type: list
+  required: true
+  description: >
+    Curated engineering patterns. Each pattern has a name, description, when
+    to apply, associated anti-patterns, and optional example.
+  items:
+    name:
+      type: string
+      required: true
+    description:
+      type: string
+      required: true
+    when_to_apply:
+      type: string
+      required: true
+      description: Conditions under which this pattern should be adopted.
+    anti_patterns:
+      type: list[string]
+      required: false
+      description: Mistakes to avoid when applying this pattern.
+    example:
+      type: string
+      required: false
+      description: Optional code snippet, architecture note, or reference.
+
+anti_patterns:
+  type: list
+  required: false
+  description: >
+    Global anti-patterns not tied to a specific pattern. Practices to avoid
+    wholesale when building in this horizontal.
+  items:
+    name:
+      type: string
+      required: true
+    description:
+      type: string
+      required: true
+    why_harmful:
+      type: string
+      required: true
+
+common_architectures:
+  type: list
+  required: false
+  description: >
+    Reference architectures typical for this horizontal. Each lists the
+    components and the scenarios where this architecture applies.
+  items:
+    name:
+      type: string
+      required: true
+    description:
+      type: string
+      required: true
+    components:
+      type: list[string]
+      required: true
+    when_to_use:
+      type: string
+      required: true

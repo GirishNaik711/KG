@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAPIDS Brownfield Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="../rapids-loader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+    window.mermaid = mermaid;
+    window.mermaidReady = true;
+    // Dispatch event to notify that mermaid is ready
+    window.dispatchEvent(new Event('mermaidLoaded'));
+  </script>
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --surface: #ffffff;
+      --surface-soft: #f7f9fc;
+      --ink: #111827;
+      --muted: #64748b;
+      --subtle: #94a3b8;
+      --line: #d8e0ea;
+      --brand: #155e75;
+      --brand-strong: #0f3f52;
+      --accent: #c2410c;
+      --good: #0f766e;
+      --warn: #b45309;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 14px 40px rgba(15, 23, 42, 0.12);
+      --radius: 8px;
+      --radius-lg: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Manrope, system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(216, 224, 234, 0.55) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(216, 224, 234, 0.55) 1px, transparent 1px),
+        var(--bg);
+      background-size: 36px 36px;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow-md);
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: var(--brand);
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--muted);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .tab {
+      padding: 12px 24px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 650;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab:hover {
+      color: var(--brand);
+      background: var(--surface-soft);
+    }
+
+    .tab.active {
+      color: var(--brand);
+      border-bottom-color: var(--brand);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .artifact-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .artifact-card h2 {
+      font-size: 1.5rem;
+      font-weight: 750;
+      margin-bottom: 20px;
+      color: var(--brand);
+    }
+
+    .mermaid-container {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px;
+      overflow: hidden;
+      margin: 20px 0;
+      position: relative;
+      min-height: 400px;
+    }
+
+    .diagram-wrapper {
+      width: 100%;
+      height: 600px;
+      overflow: auto;
+      cursor: grab;
+    }
+
+    .diagram-wrapper:active {
+      cursor: grabbing;
+    }
+
+    .diagram-wrapper svg {
+      max-width: none !important;
+      height: auto !important;
+    }
+
+    .zoom-controls {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .zoom-btn {
+      width: 40px;
+      height: 40px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--brand);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .zoom-btn:hover {
+      background: var(--brand);
+      color: white;
+      box-shadow: var(--shadow-md);
+    }
+
+    .zoom-btn:active {
+      transform: scale(0.95);
+    }
+
+    .zoom-level {
+      padding: 8px 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 650;
+      color: var(--brand);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .markdown-content {
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .markdown-content h1 {
+      color: var(--brand);
+      font-size: 1.5rem;
+      margin: 24px 0 16px;
+      font-weight: 800;
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 8px;
+    }
+
+    .markdown-content h2 {
+      color: var(--brand);
+      font-size: 1.3rem;
+      margin: 20px 0 12px;
+      font-weight: 750;
+    }
+
+    .markdown-content h3 {
+      color: var(--brand);
+      font-size: 1.1rem;
+      margin: 16px 0 10px;
+      font-weight: 700;
+    }
+
+    .markdown-content h4 {
+      color: var(--ink);
+      font-size: 1rem;
+      margin: 14px 0 8px;
+      font-weight: 650;
+    }
+
+    .markdown-content p {
+      margin: 12px 0;
+      line-height: 1.6;
+    }
+
+    .markdown-content ul,
+    .markdown-content ol {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+
+    .markdown-content li {
+      margin: 6px 0;
+      line-height: 1.5;
+    }
+
+    .markdown-content pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: var(--radius);
+      overflow-x: auto;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.85rem;
+      margin: 12px 0;
+    }
+
+    .markdown-content code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.85rem;
+      color: #dc2626;
+    }
+
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+    }
+
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      background: white;
+      box-shadow: var(--shadow-sm);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .markdown-content thead {
+      background: var(--brand);
+      color: white;
+    }
+
+    .markdown-content th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 700;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .markdown-content td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .markdown-content tbody tr:hover {
+      background: var(--surface-soft);
+    }
+
+    .markdown-content tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .markdown-content blockquote {
+      border-left: 4px solid var(--brand);
+      padding: 12px 16px;
+      margin: 16px 0;
+      background: var(--surface-soft);
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .markdown-content hr {
+      border: none;
+      border-top: 2px solid var(--line);
+      margin: 24px 0;
+    }
+
+    .markdown-content a {
+      color: var(--brand);
+      text-decoration: underline;
+    }
+
+    .markdown-content a:hover {
+      color: var(--brand-strong);
+    }
+
+    .markdown-content strong {
+      font-weight: 650;
+      color: var(--ink);
+    }
+
+    .markdown-content em {
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--subtle);
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--brand);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="../index.html" class="back-link">← Back to Dashboard</a>
+
+    <header>
+      <h1>🏗️ Brownfield Intelligence</h1>
+      <p class="subtitle">Automated codebase profiling — Architecture, Structure, Dependencies, and Tech Stack</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="learning">Codebase Learning</button>
+      <button class="tab" data-tab="architecture-mmd">Architecture (Diagram)</button>
+      <button class="tab" data-tab="architecture-md">Architecture (Doc)</button>
+      <button class="tab" data-tab="structure">Codebase Structure</button>
+      <button class="tab" data-tab="techstack">Tech Stack</button>
+      <button class="tab" data-tab="datamodel">Data Model</button>
+      <button class="tab" data-tab="dataflow">Data Flow</button>
+      <button class="tab" data-tab="dependencies">Dependency Graph</button>
+      <button class="tab" data-tab="depmap">Dependency Map</button>
+      <button class="tab" data-tab="profile">Profile JSON</button>
+    </div>
+
+    <div id="learning" class="tab-content active">
+      <div class="artifact-card">
+        <h2>📚 Codebase Learning Document</h2>
+        <div id="learningContent" class="markdown-content loading">
+          <div class="empty-state">
+            <div class="empty-state-icon">📚</div>
+            <p>Loading codebase learning document...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="architecture-mmd" class="tab-content">
+      <div class="artifact-card">
+        <h2>📐 Architecture Diagram (Mermaid)</h2>
+        <div id="architectureMmdContent" class="mermaid-container loading">
+          <div class="zoom-controls">
+            <button class="zoom-btn" id="zoomIn" title="Zoom In">+</button>
+            <div class="zoom-level" id="zoomLevel">100%</div>
+            <button class="zoom-btn" id="zoomOut" title="Zoom Out">−</button>
+            <button class="zoom-btn" id="resetZoom" title="Reset Zoom">⟲</button>
+          </div>
+          <div class="diagram-wrapper" id="diagramWrapper">
+            <div class="empty-state">
+              <div class="empty-state-icon">📊</div>
+              <p>Loading architecture diagram...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="architecture-md" class="tab-content">
+      <div class="artifact-card">
+        <h2>📐 Architecture Document</h2>
+        <div id="architectureMdContent" class="markdown-content loading">
+          <div class="empty-state">
+            <div class="empty-state-icon">📄</div>
+            <p>Loading architecture document...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="structure" class="tab-content">
+      <div class="artifact-card">
+        <h2>📁 Codebase Structure</h2>
+        <div id="structureContent" class="markdown-content loading">
+          <div class="empty-state">
+            <div class="empty-state-icon">📁</div>
+            <p>Loading codebase structure...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="techstack" class="tab-content">
+      <div class="artifact-card">
+        <h2>⚙️ Tech Stack</h2>
+        <div id="techstackContent" class="markdown-content loading">
+          <div class="empty-state">
+            <div class="empty-state-icon">⚙️</div>
+            <p>Loading tech stack...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="datamodel" class="tab-content">
+      <div class="artifact-card">
+        <h2>🗄️ Data Model Document</h2>
+        <div id="datamodelContent" class="markdown-content loading">
+          <div class="empty-state">
+            <div class="empty-state-icon">🗄️</div>
+            <p>Loading data model document...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="dataflow" class="tab-content">
+      <div class="artifact-card">
+        <h2>🔄 Data Flow Document</h2>
+        <div id="dataflowContent" class="markdown-content loading">
+          <div class="empty-state">
+            <div class="empty-state-icon">🔄</div>
+            <p>Loading data flow document...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="dependencies" class="tab-content">
+      <div class="artifact-card">
+        <h2>🔗 Dependency Graph Document</h2>
+        <div id="dependenciesContent" class="markdown-content loading">
+          <div class="empty-state">
+            <div class="empty-state-icon">🔗</div>
+            <p>Loading dependency graph...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="depmap" class="tab-content">
+      <div class="artifact-card">
+        <h2>🔗 Dependency Map</h2>
+        <div id="depmapContent" class="markdown-content loading">
+          <div class="empty-state">
+            <div class="empty-state-icon">🔗</div>
+            <p>Loading dependency map...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="profile" class="tab-content">
+      <div class="artifact-card">
+        <h2>📋 Full Codebase Profile (JSON)</h2>
+        <div id="profileContent" class="markdown-content loading">
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p>Loading codebase profile...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const rapidsLoader = new RAPIDSLoader('../rapids-config.json');
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    let mermaidCounter = 0;
+    const mermaidCodeStore = new Map(); // Store mermaid code separately
+
+    async function parseMarkdownWithMermaid(markdown) {
+      if (typeof marked === 'undefined') {
+        return escapeHtml(markdown);
+      }
+
+      // Configure marked.js
+      marked.setOptions({
+        breaks: true,
+        gfm: true,
+        headerIds: true,
+        mangle: false
+      });
+
+      // Custom renderer for code blocks to handle mermaid
+      const renderer = new marked.Renderer();
+      const originalCodeRenderer = renderer.code.bind(renderer);
+
+      renderer.code = function(code, language) {
+        if (language === 'mermaid') {
+          // Generate unique ID for this mermaid diagram
+          const diagramId = `mermaid-inline-${mermaidCounter++}`;
+          // Store the code in our Map (not in HTML to avoid escaping issues)
+          mermaidCodeStore.set(diagramId, code);
+          // Return a placeholder div
+          return `<div class="mermaid-inline" data-mermaid-id="${diagramId}" style="background: white; border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; margin: 20px 0; overflow-x: auto; min-height: 200px; display: flex; align-items: center; justify-content: center; color: var(--muted);">Rendering diagram...</div>`;
+        }
+        // For other code blocks, use default rendering
+        return originalCodeRenderer(code, language);
+      };
+
+      // Parse markdown with custom renderer
+      const html = marked.parse(markdown, { renderer });
+
+      return html;
+    }
+
+    async function renderInlineMermaidDiagrams(container) {
+      // Wait for mermaid to be available
+      if (!window.mermaid) {
+        console.log('[Mermaid] Waiting for mermaid to load...');
+        await new Promise(resolve => {
+          if (window.mermaidReady) {
+            resolve();
+          } else {
+            window.addEventListener('mermaidLoaded', resolve, { once: true });
+          }
+        });
+      }
+
+      // Find all mermaid placeholders
+      const mermaidDivs = container.querySelectorAll('.mermaid-inline');
+      console.log('[Mermaid] Found', mermaidDivs.length, 'inline diagrams to render');
+
+      for (const div of mermaidDivs) {
+        const diagramId = div.getAttribute('data-mermaid-id');
+        const mermaidCode = mermaidCodeStore.get(diagramId);
+
+        if (!mermaidCode) {
+          console.error('[Mermaid] No code found for diagram:', diagramId);
+          div.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Diagram code not found</p></div>`;
+          continue;
+        }
+
+        try {
+          console.log('[Mermaid] Rendering diagram:', diagramId);
+          const { svg } = await window.mermaid.render(diagramId, mermaidCode);
+          div.innerHTML = svg;
+          div.style.minHeight = 'auto';
+        } catch (err) {
+          console.error('[Mermaid] Failed to render inline diagram:', diagramId, err);
+          div.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Failed to render diagram: ${err.message}</p></div>`;
+        }
+      }
+    }
+
+    function parseMarkdown(markdown) {
+      // Simple synchronous version for compatibility
+      if (typeof marked !== 'undefined') {
+        marked.setOptions({
+          breaks: true,
+          gfm: true,
+          headerIds: true,
+          mangle: false
+        });
+        return marked.parse(markdown);
+      }
+      return escapeHtml(markdown);
+    }
+
+    let currentZoom = { 1: 1.0 };
+    let isDragging = false;
+    let startX, startY, scrollLeft, scrollTop;
+
+    async function renderMermaid(mermaidCode, wrapperId, containerId, diagramNum) {
+      const wrapper = document.getElementById(wrapperId);
+      const container = document.getElementById(containerId);
+
+      // Wait for mermaid to be available
+      if (!window.mermaid) {
+        await new Promise(resolve => {
+          window.addEventListener('mermaidLoaded', resolve, { once: true });
+        });
+      }
+
+      try {
+        const { svg } = await window.mermaid.render('mermaid-diagram-' + diagramNum + '-' + Date.now(), mermaidCode);
+        wrapper.innerHTML = svg;
+        container.classList.remove('loading');
+
+        // Apply initial zoom for this diagram
+        updateDiagramZoom(diagramNum);
+
+        // Enable pan with mouse drag
+        setupPanControls(wrapper, diagramNum);
+      } catch (err) {
+        console.error('[Brownfield] Mermaid render error:', err);
+        wrapper.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Failed to render diagram: ${err.message}</p></div>`;
+        container.classList.remove('loading');
+      }
+    }
+
+    function setupPanControls(wrapper, diagramNum) {
+      wrapper.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        wrapper.style.cursor = 'grabbing';
+        startX = e.pageX - wrapper.offsetLeft;
+        startY = e.pageY - wrapper.offsetTop;
+        scrollLeft = wrapper.scrollLeft;
+        scrollTop = wrapper.scrollTop;
+      });
+
+      wrapper.addEventListener('mouseleave', () => {
+        isDragging = false;
+        wrapper.style.cursor = 'grab';
+      });
+
+      wrapper.addEventListener('mouseup', () => {
+        isDragging = false;
+        wrapper.style.cursor = 'grab';
+      });
+
+      wrapper.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const x = e.pageX - wrapper.offsetLeft;
+        const y = e.pageY - wrapper.offsetTop;
+        const walkX = (x - startX) * 2;
+        const walkY = (y - startY) * 2;
+        wrapper.scrollLeft = scrollLeft - walkX;
+        wrapper.scrollTop = scrollTop - walkY;
+      });
+    }
+
+    function updateDiagramZoom(diagramNum) {
+      const wrapper = document.getElementById('diagramWrapper' + (diagramNum > 1 ? diagramNum : ''));
+      const svg = wrapper.querySelector('svg');
+      if (svg) {
+        svg.style.transform = `scale(${currentZoom[diagramNum]})`;
+        svg.style.transformOrigin = 'top left';
+        document.getElementById('zoomLevel' + (diagramNum > 1 ? diagramNum : '')).textContent = `${Math.round(currentZoom[diagramNum] * 100)}%`;
+      }
+    }
+
+    function setupZoomControls(diagramNum) {
+      const suffix = diagramNum > 1 ? diagramNum : '';
+      const wrapperId = 'diagramWrapper' + suffix;
+
+      if (!currentZoom[diagramNum]) {
+        currentZoom[diagramNum] = 1.0;
+      }
+
+      document.getElementById('zoomIn' + suffix).addEventListener('click', () => {
+        currentZoom[diagramNum] = Math.min(currentZoom[diagramNum] + 0.2, 3.0);
+        updateDiagramZoom(diagramNum);
+      });
+
+      document.getElementById('zoomOut' + suffix).addEventListener('click', () => {
+        currentZoom[diagramNum] = Math.max(currentZoom[diagramNum] - 0.2, 0.4);
+        updateDiagramZoom(diagramNum);
+      });
+
+      document.getElementById('resetZoom' + suffix).addEventListener('click', () => {
+        currentZoom[diagramNum] = 1.0;
+        updateDiagramZoom(diagramNum);
+        const wrapper = document.getElementById(wrapperId);
+        wrapper.scrollLeft = 0;
+        wrapper.scrollTop = 0;
+      });
+    }
+
+    // Setup zoom controls for diagram 1 only (architecture.mmd)
+    setupZoomControls(1);
+
+    async function loadBrownfieldIntelligence() {
+      try {
+        await rapidsLoader.init();
+
+        if (!rapidsLoader.isConfigured()) {
+          console.log('[Brownfield] Config not found');
+          return;
+        }
+
+        // Helper function to load markdown file (with mermaid support)
+        async function loadMarkdownFile(artifactKey, contentId) {
+          const content = document.getElementById(contentId);
+          try {
+            const markdown = await rapidsLoader.loadBrownfieldArtifact(artifactKey);
+            const html = await parseMarkdownWithMermaid(markdown);
+            content.innerHTML = html;
+
+            // Render any inline mermaid diagrams
+            await renderInlineMermaidDiagrams(content);
+
+            content.classList.remove('loading');
+          } catch (err) {
+            console.error(`[Brownfield] Failed to load ${artifactKey}:`, err);
+            content.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📄</div><p>File not found</p></div>`;
+            content.classList.remove('loading');
+          }
+        }
+
+        // Helper function to load mermaid file
+        async function loadMermaidFile(artifactKey, wrapperId, containerId) {
+          const container = document.getElementById(containerId);
+          try {
+            const mermaidCode = await rapidsLoader.loadBrownfieldArtifact(artifactKey);
+            await renderMermaid(mermaidCode, wrapperId, containerId, 1);
+          } catch (err) {
+            console.error(`[Brownfield] Failed to load ${artifactKey}:`, err);
+            document.getElementById(wrapperId).innerHTML = `<div class="empty-state"><div class="empty-state-icon">📊</div><p>Diagram not found</p></div>`;
+            container.classList.remove('loading');
+          }
+        }
+
+        // Load all markdown documents
+        await loadMarkdownFile('codebase_learning', 'learningContent');
+        await loadMarkdownFile('architecture_md', 'architectureMdContent');
+        await loadMarkdownFile('codebase_structure', 'structureContent');
+        await loadMarkdownFile('tech_stack', 'techstackContent');
+        await loadMarkdownFile('data_model_md', 'datamodelContent');
+        await loadMarkdownFile('data_flow_md', 'dataflowContent');
+        await loadMarkdownFile('dependency_graph_md', 'dependenciesContent');
+        await loadMarkdownFile('dependency_map', 'depmapContent');
+
+        // Load mermaid diagram (architecture.mmd)
+        await loadMermaidFile('architecture_mmd', 'diagramWrapper', 'architectureMmdContent');
+
+        // Load JSON profile
+        try {
+          const profile = await rapidsLoader.loadBrownfieldArtifact('codebase_profile');
+          const profileContent = document.getElementById('profileContent');
+          profileContent.innerHTML = `<pre>${JSON.stringify(profile, null, 2)}</pre>`;
+          profileContent.classList.remove('loading');
+        } catch (err) {
+          console.error('[Brownfield] Failed to load codebase profile:', err);
+          document.getElementById('profileContent').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>Profile not found</p></div>';
+          document.getElementById('profileContent').classList.remove('loading');
+        }
+
+      } catch (err) {
+        console.error('[Brownfield] Load error:', err);
+      }
+    }
+
+    // Wait for mermaid to be ready before loading
+    if (window.mermaidReady) {
+      loadBrownfieldIntelligence();
+    } else {
+      window.addEventListener('mermaidLoaded', () => {
+        loadBrownfieldIntelligence();
+      });
+    }
+  </script>
+</body>
+</html>

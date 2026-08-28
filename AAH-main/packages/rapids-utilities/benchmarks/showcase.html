@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeMap-Scale: AI Agent Code Intelligence</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface2: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent2: #3fb950;
+            --accent3: #d2a8ff;
+            --accent4: #f78166;
+            --gradient: linear-gradient(135deg, #58a6ff 0%, #3fb950 50%, #d2a8ff 100%);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+        /* Hero */
+        .hero {
+            padding: 80px 0 60px;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(88, 166, 255, 0.08) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .hero h1 {
+            font-size: 3.2rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+        .hero .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+
+        /* Stats banner */
+        .stats-banner {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 60px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .stat-card .label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Sections */
+        .section {
+            padding: 60px 0;
+            border-top: 1px solid var(--border);
+        }
+        .section-header {
+            margin-bottom: 32px;
+        }
+        .section-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .section-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        th {
+            background: var(--surface2);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+        td {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+        }
+        tr:hover td { background: var(--surface); }
+        .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem; }
+        .highlight { color: var(--accent); font-weight: 600; }
+        .highlight-green { color: var(--accent2); font-weight: 600; }
+        .highlight-purple { color: var(--accent3); font-weight: 600; }
+
+        /* Semantic search demo */
+        .search-demo {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+        .search-query {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .search-icon {
+            width: 20px; height: 20px;
+            color: var(--accent);
+        }
+        .search-text {
+            font-size: 1rem;
+            color: var(--text);
+            font-style: italic;
+        }
+        .search-latency {
+            margin-left: auto;
+            font-size: 0.8rem;
+            color: var(--accent2);
+            background: rgba(63, 185, 80, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .search-results { list-style: none; }
+        .search-result {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            padding: 8px 0;
+        }
+        .result-score {
+            font-family: 'SF Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent3);
+            min-width: 50px;
+        }
+        .result-kind {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--surface2);
+            color: var(--text-muted);
+            min-width: 60px;
+            text-align: center;
+        }
+        .result-name { font-weight: 600; }
+        .result-file {
+            font-family: 'SF Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0;
+        }
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: var(--text); }
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Architecture */
+        .community-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+        .community-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .community-card h4 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+        .community-card .meta {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .community-count {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent3);
+        }
+
+        /* Code block */
+        .code-block {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            overflow-x: auto;
+            margin: 24px 0;
+        }
+        .code-comment { color: var(--text-muted); }
+        .code-keyword { color: var(--accent3); }
+        .code-string { color: var(--accent2); }
+        .code-func { color: var(--accent); }
+
+        /* Callout */
+        .callout {
+            background: rgba(88, 166, 255, 0.05);
+            border-left: 3px solid var(--accent);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 24px 0;
+            font-size: 0.95rem;
+        }
+
+        /* Bar chart */
+        .bar-chart { margin: 24px 0; }
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .bar-label {
+            min-width: 100px;
+            font-size: 0.85rem;
+            text-align: right;
+        }
+        .bar-track {
+            flex: 1;
+            height: 28px;
+            background: var(--surface2);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 1s ease;
+            display: flex;
+            align-items: center;
+            padding-left: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .bar-fill.blue { background: linear-gradient(90deg, var(--accent), #79c0ff); }
+        .bar-fill.green { background: linear-gradient(90deg, var(--accent2), #7ee787); }
+        .bar-fill.purple { background: linear-gradient(90deg, var(--accent3), #e2c5ff); }
+
+        /* CLI Cards */
+        .cli-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .cli-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .cli-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .cli-cmd {
+            font-family: 'SF Mono', monospace;
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 0.9rem;
+            background: rgba(88, 166, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .cli-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .cli-terminal {
+            background: #0d1117;
+        }
+        .terminal-bar {
+            padding: 8px 12px;
+            display: flex;
+            gap: 6px;
+        }
+        .dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+        }
+        .dot.red { background: #ff5f56; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #27c93f; }
+        .terminal-content {
+            padding: 0 16px 16px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.75rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre;
+            color: var(--text);
+        }
+        .t-prompt { color: var(--accent2); font-weight: 700; }
+        .t-brace { color: var(--text-muted); }
+        .t-key { color: var(--accent); }
+        .t-str { color: var(--accent2); }
+        .t-num { color: var(--accent3); }
+
+        @media (max-width: 600px) {
+            .cli-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Footer */
+        .footer {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* CTA */
+        .cta {
+            text-align: center;
+            padding: 60px 0;
+        }
+        .cta h2 { font-size: 2.2rem; margin-bottom: 16px; }
+        .cta p { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 32px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .cta-code {
+            display: inline-block;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 32px;
+            font-family: 'SF Mono', monospace;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Hero -->
+    <section class="hero">
+        <h1>CodeMap-Scale</h1>
+        <p class="subtitle">
+            Persistent code intelligence for AI agents. Index any codebase in seconds.
+            Ask natural language questions. Navigate 500K+ files like a senior engineer.
+        </p>
+        <div class="stats-banner">
+            <div class="stat-card">
+                <div class="number">226,950</div>
+                <div class="label">Symbols Indexed</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">5.2s</div>
+                <div class="label">Index 17K Files (Kubernetes)</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">&lt;2ms</div>
+                <div class="label">Query Latency (p95)</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">125</div>
+                <div class="label">Communities Detected</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">&lt;500ms</div>
+                <div class="label">Semantic Search (33K symbols)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Semantic Search Section -->
+    <section class="section" id="semantic">
+        <div class="section-header">
+            <h2>Natural Language Code Search</h2>
+            <p>Ask questions in plain English. Get semantically relevant code back instantly.</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('flask-tab')">Flask</button>
+            <button class="tab" onclick="showTab('fastapi-tab')">FastAPI</button>
+            <button class="tab" onclick="showTab('django-tab')">Django</button>
+        </div>
+
+        <div id="flask-tab" class="tab-content active">
+            <div class="search-demo">
+                <div class="search-query">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <span class="search-text">"session management and cookies"</span>
+                    <span class="search-latency">49ms</span>
+                </div>
+                <ul class="search-results">
+                    <li class="search-result">
+                        <span class="result-score">0.577</span>
+                        <span class="result-kind">method</span>
+                        <span class="result-name">should_set_cookie</span>
+                        <span class="result-file">src/flask/sessions.py</span>
+                    </li>
+                    <li class="search-result">
+                        <span class="result-score">0.554</span>
+                        <span class="result-kind">class</span>
+                        <span class="result-name">SecureCookieSession</span>
+                        <span class="result-file">src/flask/sessions.py</span>
+                    </li>
+                    <li class="search-result">
+                        <span class="result-score">0.545</span>
+                        <span class="result-kind">function</span>
+                        <span class="result-name">test_session_cookie_setting</span>
+                        <span class="result-file">tests/test_basic.py</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="search-demo">
+                <div class="search-query">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <span class="search-text">"template rendering engine"</span>
+                    <span class="search-latency">39ms</span>
+                </div>
+                <ul class="search-results">
+                    <li class="search-result">
+                        <span class="result-score">0.645</span>
+                        <span class="result-kind">function</span>
+                        <span class="result-name">render_template</span>
+                        <span class="result-file">src/flask/templating.py</span>
+                    </li>
+                    <li class="search-result">
+                        <span class="result-score">0.554</span>
+                        <span class="result-kind">function</span>
+                        <span class="result-name">render_template_string</span>
+                        <span class="result-file">src/flask/templating.py</span>
+                    </li>
+                    <li class="search-result">
+                        <span class="result-score">0.486</span>
+                        <span class="result-kind">function</span>
+                        <span class="result-name">test_before_render_template</span>
+                        <span class="result-file">tests/test_signals.py</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="fastapi-tab" class="tab-content">
+            <div class="search-demo">
+                <div class="search-query">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <span class="search-text">"authentication and security"</span>
+                    <span class="search-latency">62ms</span>
+                </div>
+                <ul class="search-results">
+                    <li class="search-result">
+                        <span class="result-score">0.483</span>
+                        <span class="result-kind">function</span>
+                        <span class="result-name">authenticate_user</span>
+                        <span class="result-file">docs_src/security/tutorial004_py310.py</span>
+                    </li>
+                    <li class="search-result">
+                        <span class="result-score">0.482</span>
+                        <span class="result-kind">function</span>
+                        <span class="result-name">authenticate_user</span>
+                        <span class="result-file">docs_src/security/tutorial005_py310.py</span>
+                    </li>
+                    <li class="search-result">
+                        <span class="result-score">0.481</span>
+                        <span class="result-kind">function</span>
+                        <span class="result-name">authenticate_user</span>
+                        <span class="result-file">docs_src/security/tutorial004_an_py310.py</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="search-demo">
+                <div class="search-query">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <span class="search-text">"websocket handling"</span>
+                    <span class="search-latency">63ms</span>
+                </div>
+                <ul class="search-results">
+                    <li class="search-result">
+                        <span class="result-score">0.713</span>
+                        <span class="result-kind">method</span>
+                        <span class="result-name">websocket</span>
+                        <span class="result-file">fastapi/applications.py</span>
+                    </li>
+                    <li class="search-result">
+                        <span class="result-score">0.633</span>
+                        <span class="result-kind">method</span>
+                        <span class="result-name">websocket</span>
+                        <span class="result-file">fastapi/routing.py</span>
+                    </li>
+                    <li class="search-result">
+                        <span class="result-score">0.628</span>
+                        <span class="result-kind">function</span>
+                        <span class="result-name">test_websocket_handle_disconnection</span>
+                        <span class="result-file">tests/test_tutorial/.../test_tutorial003.py</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="django-tab" class="tab-content">
+            <div class="search-demo">
+                <div class="search-query">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <span class="search-text">"user authentication and login"</span>
+                    <span class="search-latency">483ms</span>
+                </div>
+                <ul class="search-results">
+                    <li class="search-result">
+                        <span class="result-score">0.544</span>
+                        <span class="result-kind">class</span>
+                        <span class="result-name">LoginView</span>
+                        <span class="result-file">django/contrib/auth/views.py</span>
+                    </li>
+                    <li class="search-result">
+                        <span class="result-score">0.526</span>
+                        <span class="result-kind">function</span>
+                        <span class="result-name">login</span>
+                        <span class="result-file">django/contrib/auth/__init__.py</span>
+                    </li>
+                    <li class="search-result">
+                        <span class="result-score">0.489</span>
+                        <span class="result-kind">class</span>
+                        <span class="result-name">LoginRequiredMiddleware</span>
+                        <span class="result-file">django/contrib/auth/middleware.py</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="search-demo">
+                <div class="search-query">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <span class="search-text">"database migration system"</span>
+                    <span class="search-latency">402ms</span>
+                </div>
+                <ul class="search-results">
+                    <li class="search-result">
+                        <span class="result-score">0.671</span>
+                        <span class="result-kind">method</span>
+                        <span class="result-name">Migration</span>
+                        <span class="result-file">django/db/migrations/recorder.py</span>
+                    </li>
+                    <li class="search-result">
+                        <span class="result-score">0.657</span>
+                        <span class="result-kind">class</span>
+                        <span class="result-name">Migration</span>
+                        <span class="result-file">django/db/migrations/migration.py</span>
+                    </li>
+                    <li class="search-result">
+                        <span class="result-score">0.583</span>
+                        <span class="result-kind">method</span>
+                        <span class="result-name">applied_migrations</span>
+                        <span class="result-file">django/db/migrations/recorder.py</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>How it works:</strong> Symbols are embedded using sentence-transformers (all-MiniLM-L6-v2, runs locally).
+            Vectors stored in SQLite alongside the code graph. No API keys, no cloud dependency. Django's 33K symbols index in 15s, query in &lt;500ms.
+        </div>
+    </section>
+
+    <!-- Indexing Performance -->
+    <section class="section" id="indexing">
+        <div class="section-header">
+            <h2>Index Any Codebase in Seconds</h2>
+            <p>Rust backend (PyO3 + rayon) parallel-walks, hashes, and parses at 3,000+ files/sec.</p>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Repository</th>
+                        <th>Description</th>
+                        <th>Files</th>
+                        <th>Symbols</th>
+                        <th>Index Time</th>
+                        <th>Files/sec</th>
+                        <th>DB Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="highlight">Flask</td>
+                        <td>Micro web framework</td>
+                        <td class="mono">83</td>
+                        <td class="mono">852</td>
+                        <td class="highlight-green">0.04s</td>
+                        <td class="mono">2,100+</td>
+                        <td class="mono">&lt;1 MB</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight">FastAPI</td>
+                        <td>Modern async API framework</td>
+                        <td class="mono">1,125</td>
+                        <td class="mono">4,888</td>
+                        <td class="highlight-green">0.21s</td>
+                        <td class="mono">5,300+</td>
+                        <td class="mono">&lt;1 MB</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight">Django</td>
+                        <td>Full-stack web framework</td>
+                        <td class="mono">3,006</td>
+                        <td class="mono">33,918</td>
+                        <td class="highlight-green">1.3s</td>
+                        <td class="mono">2,300+</td>
+                        <td class="mono">12.5 MB</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight">CPython</td>
+                        <td>Python interpreter</td>
+                        <td class="mono">3,418</td>
+                        <td class="mono">62,774</td>
+                        <td class="highlight-green">1.4s</td>
+                        <td class="mono">2,400+</td>
+                        <td class="mono">20.5 MB</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight">Kubernetes</td>
+                        <td>Container orchestration</td>
+                        <td class="mono">16,927</td>
+                        <td class="mono">124,518</td>
+                        <td class="highlight-green">5.2s</td>
+                        <td class="mono">3,200+</td>
+                        <td class="mono">60.5 MB</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bar-chart">
+            <div class="bar-row">
+                <span class="bar-label">Flask</span>
+                <div class="bar-track">
+                    <div class="bar-fill blue" style="width: 1%">0.04s</div>
+                </div>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">FastAPI</span>
+                <div class="bar-track">
+                    <div class="bar-fill blue" style="width: 4%">0.21s</div>
+                </div>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">Django</span>
+                <div class="bar-track">
+                    <div class="bar-fill blue" style="width: 25%">1.3s</div>
+                </div>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">CPython</span>
+                <div class="bar-track">
+                    <div class="bar-fill blue" style="width: 27%">1.4s</div>
+                </div>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">Kubernetes</span>
+                <div class="bar-track">
+                    <div class="bar-fill blue" style="width: 100%">5.2s &mdash; 16,927 files, 124K symbols</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Query Performance -->
+    <section class="section" id="queries">
+        <div class="section-header">
+            <h2>Surgical Precision: Sub-5ms Structural Search</h2>
+            <p>Find any symbol by name and kind. SQLite-backed, zero cold start.</p>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Repository</th>
+                        <th>Query</th>
+                        <th>Matches</th>
+                        <th>p50</th>
+                        <th>p95</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Flask</td><td class="mono">*Blueprint* (class)</td><td>4</td><td class="highlight-green">0.07ms</td><td class="highlight-green">0.08ms</td></tr>
+                    <tr><td>Flask</td><td class="mono">*route*</td><td>17</td><td class="highlight-green">0.20ms</td><td class="highlight-green">0.27ms</td></tr>
+                    <tr><td>FastAPI</td><td class="mono">*Depends*</td><td>42</td><td class="highlight-green">0.91ms</td><td class="highlight-green">1.05ms</td></tr>
+                    <tr><td>Django</td><td class="mono">*Middleware* (class)</td><td>50</td><td class="highlight-green">2.02ms</td><td class="highlight-green">2.40ms</td></tr>
+                    <tr><td>Django</td><td class="mono">*View* (class)</td><td>50</td><td class="highlight-green">1.90ms</td><td class="highlight-green">2.21ms</td></tr>
+                    <tr><td>CPython</td><td class="mono">*compile* (function)</td><td>41</td><td class="highlight-green">1.35ms</td><td class="highlight-green">1.55ms</td></tr>
+                    <tr><td>Kubernetes</td><td class="mono">*Handler*</td><td>50</td><td class="highlight-green">2.35ms</td><td class="highlight-green">2.72ms</td></tr>
+                    <tr><td>Kubernetes</td><td class="mono">*Controller*</td><td>50</td><td class="highlight-green">0.28ms</td><td class="highlight-green">0.31ms</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout">
+            Query latency stays sub-5ms regardless of codebase size. An AI agent gets the same instant response
+            whether working on a micro-framework or a massive monorepo.
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="section" id="architecture">
+        <div class="section-header">
+            <h2>Automatic Architecture Discovery</h2>
+            <p>Leiden community detection finds tightly-coupled modules. God nodes reveal architectural hubs.</p>
+        </div>
+
+        <div class="community-grid">
+            <div class="community-card">
+                <h4>Flask</h4>
+                <div class="community-count">15</div>
+                <div class="meta">communities detected</div>
+                <div class="meta" style="margin-top: 8px">Top hub: <strong>explain_template_loading_attempts</strong> (12 connections)</div>
+            </div>
+            <div class="community-card">
+                <h4>FastAPI</h4>
+                <div class="community-count">23</div>
+                <div class="meta">communities detected</div>
+                <div class="meta" style="margin-top: 8px">Top hub: <strong>jsonable_encoder</strong> (28 connections)</div>
+            </div>
+            <div class="community-card">
+                <h4>Django</h4>
+                <div class="community-count">51</div>
+                <div class="meta">communities detected</div>
+                <div class="meta" style="margin-top: 8px">Top hub: <strong>formfield</strong> (21 connections)</div>
+            </div>
+            <div class="community-card">
+                <h4>CPython</h4>
+                <div class="community-count">36</div>
+                <div class="meta">communities detected</div>
+                <div class="meta" style="margin-top: 8px">Top hub: <strong>_find_and_load_unlocked</strong> (9 connections)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Impact Analysis -->
+    <section class="section" id="impact">
+        <div class="section-header">
+            <h2>Blast Radius &amp; Impact Analysis</h2>
+            <p>Before making a change, know exactly what will be affected.</p>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Repository</th>
+                        <th>File</th>
+                        <th>Downstream Dependents</th>
+                        <th>Latency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Flask</td><td class="mono">src/flask/app.py</td><td class="highlight-purple">16 files</td><td class="mono">0.6ms</td></tr>
+                    <tr><td>Flask</td><td class="mono">src/flask/blueprints.py</td><td class="highlight-purple">4 files</td><td class="mono">0.2ms</td></tr>
+                    <tr><td>FastAPI</td><td class="mono">fastapi/routing.py</td><td class="highlight-purple">6 files</td><td class="mono">0.4ms</td></tr>
+                    <tr><td>Django</td><td class="mono">django/db/models/base.py</td><td class="highlight-purple">2 files</td><td class="mono">0.6ms</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout">
+            Impact analysis is sub-millisecond. An agent can check the blast radius of any file change
+            before writing a single line of code.
+        </div>
+    </section>
+
+    <!-- Incremental -->
+    <section class="section" id="incremental">
+        <div class="section-header">
+            <h2>Incremental: Only Re-parse What Changed</h2>
+            <p>Content hashing detects changes. Only modified files are re-indexed.</p>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Repository</th>
+                        <th>No-op Update</th>
+                        <th>After 10 Changes</th>
+                        <th>Files Re-parsed</th>
+                        <th>vs Full Re-index</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Flask</td><td class="mono">0.005s</td><td class="mono">0.23s</td><td>10</td><td class="text-muted">~same (tiny)</td></tr>
+                    <tr><td>FastAPI</td><td class="mono">0.05s</td><td class="mono">0.24s</td><td>10</td><td class="text-muted">~same</td></tr>
+                    <tr><td>Django</td><td class="mono">0.21s</td><td class="mono">0.37s</td><td>10</td><td class="highlight-green">3.5x faster</td></tr>
+                    <tr><td>CPython</td><td class="mono">0.32s</td><td class="mono">0.27s</td><td>19</td><td class="highlight-green">5.3x faster</td></tr>
+                    <tr><td>Kubernetes</td><td class="mono">0.78s</td><td class="mono">0.73s</td><td>25</td><td class="highlight-green">7.1x faster</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- CLI Commands -->
+    <section class="section" id="cli">
+        <div class="section-header">
+            <h2>Complete CLI Reference</h2>
+            <p>Every command produces structured JSON output. Perfect for scripting and agent integration.</p>
+        </div>
+
+        <div class="cli-grid">
+            <!-- Scout -->
+            <div class="cli-card">
+                <div class="cli-header">
+                    <span class="cli-cmd">scout</span>
+                    <span class="cli-desc">Index a codebase (T0 inventory + T1 skeleton parse)</span>
+                </div>
+                <div class="cli-terminal">
+                    <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="terminal-content"><span class="t-prompt">$</span> codemap scout /path/to/flask --force --json
+
+<span class="t-brace">{</span>
+  <span class="t-key">"files"</span>: <span class="t-num">83</span>,
+  <span class="t-key">"symbols"</span>: <span class="t-num">852</span>,
+  <span class="t-key">"languages"</span>: { <span class="t-key">"python"</span>: <span class="t-num">83</span> },
+  <span class="t-key">"phases"</span>: {
+    <span class="t-key">"tier0"</span>: { <span class="t-key">"rate"</span>: <span class="t-num">4122</span>, <span class="t-key">"backend"</span>: <span class="t-str">"rust"</span> },
+    <span class="t-key">"tier1"</span>: { <span class="t-key">"symbols"</span>: <span class="t-num">921</span>, <span class="t-key">"rate"</span>: <span class="t-num">2894</span> }
+  },
+  <span class="t-key">"total_elapsed"</span>: <span class="t-num">0.1</span>,
+  <span class="t-key">"db_size_mb"</span>: <span class="t-num">2.1</span>
+<span class="t-brace">}</span></pre>
+                </div>
+            </div>
+
+            <!-- Query -->
+            <div class="cli-card">
+                <div class="cli-header">
+                    <span class="cli-cmd">query</span>
+                    <span class="cli-desc">Structural search by name pattern and kind</span>
+                </div>
+                <div class="cli-terminal">
+                    <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="terminal-content"><span class="t-prompt">$</span> codemap query /path/to/flask "*Blueprint*" --kind class --json
+
+<span class="t-brace">{</span>
+  <span class="t-key">"pattern"</span>: <span class="t-str">"*Blueprint*"</span>,
+  <span class="t-key">"total"</span>: <span class="t-num">4</span>,
+  <span class="t-key">"matches"</span>: [
+    { <span class="t-key">"name"</span>: <span class="t-str">"Blueprint"</span>, <span class="t-key">"kind"</span>: <span class="t-str">"class"</span>,
+      <span class="t-key">"file_path"</span>: <span class="t-str">"src/flask/blueprints.py"</span>, <span class="t-key">"start_line"</span>: <span class="t-num">18</span> },
+    { <span class="t-key">"name"</span>: <span class="t-str">"BlueprintSetupState"</span>, <span class="t-key">"kind"</span>: <span class="t-str">"class"</span>,
+      <span class="t-key">"file_path"</span>: <span class="t-str">"src/flask/sansio/blueprints.py"</span>, <span class="t-key">"start_line"</span>: <span class="t-num">34</span> },
+    { <span class="t-key">"name"</span>: <span class="t-str">"Blueprint"</span>, <span class="t-key">"kind"</span>: <span class="t-str">"class"</span>,
+      <span class="t-key">"file_path"</span>: <span class="t-str">"src/flask/sansio/blueprints.py"</span>, <span class="t-key">"start_line"</span>: <span class="t-num">119</span> },
+    ...
+  ]
+<span class="t-brace">}</span></pre>
+                </div>
+            </div>
+
+            <!-- Ask -->
+            <div class="cli-card">
+                <div class="cli-header">
+                    <span class="cli-cmd">ask</span>
+                    <span class="cli-desc">Natural language question about the codebase</span>
+                </div>
+                <div class="cli-terminal">
+                    <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="terminal-content"><span class="t-prompt">$</span> codemap ask /path/to/flask "what handles routing and URL dispatch?" --json
+
+<span class="t-brace">{</span>
+  <span class="t-key">"query"</span>: <span class="t-str">"what handles routing and URL dispatch?"</span>,
+  <span class="t-key">"results"</span>: [
+    { <span class="t-key">"name"</span>: <span class="t-str">"dispatch_request"</span>, <span class="t-key">"kind"</span>: <span class="t-str">"method"</span>,
+      <span class="t-key">"file_path"</span>: <span class="t-str">"src/flask/app.py"</span>, <span class="t-key">"score"</span>: <span class="t-num">0.386</span> },
+    { <span class="t-key">"name"</span>: <span class="t-str">"route"</span>, <span class="t-key">"kind"</span>: <span class="t-str">"method"</span>,
+      <span class="t-key">"file_path"</span>: <span class="t-str">"src/flask/sansio/scaffold.py"</span>, <span class="t-key">"score"</span>: <span class="t-num">0.381</span> },
+    { <span class="t-key">"name"</span>: <span class="t-str">"full_dispatch_request"</span>, <span class="t-key">"kind"</span>: <span class="t-str">"method"</span>,
+      <span class="t-key">"file_path"</span>: <span class="t-str">"src/flask/app.py"</span>, <span class="t-key">"score"</span>: <span class="t-num">0.373</span> },
+    ...
+  ]
+<span class="t-brace">}</span></pre>
+                </div>
+            </div>
+
+            <!-- Chain -->
+            <div class="cli-card">
+                <div class="cli-header">
+                    <span class="cli-cmd">chain</span>
+                    <span class="cli-desc">Downstream call chain traversal</span>
+                </div>
+                <div class="cli-terminal">
+                    <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="terminal-content"><span class="t-prompt">$</span> codemap chain /path/to/flask src.flask.logging.create_logger --json
+
+<span class="t-brace">{</span>
+  <span class="t-key">"call_chain"</span>: {
+    <span class="t-key">"fqn"</span>: <span class="t-str">"src.flask.logging.create_logger"</span>,
+    <span class="t-key">"kind"</span>: <span class="t-str">"function"</span>,
+    <span class="t-key">"calls"</span>: [
+      { <span class="t-key">"fqn"</span>: <span class="t-str">"logging.getLogger"</span>, <span class="t-key">"kind"</span>: <span class="t-str">"unresolved"</span> },
+      { <span class="t-key">"fqn"</span>: <span class="t-str">"logger.setLevel"</span>, <span class="t-key">"kind"</span>: <span class="t-str">"unresolved"</span> },
+      { <span class="t-key">"fqn"</span>: <span class="t-str">"src.flask.logging.has_level_handler"</span>,
+        <span class="t-key">"kind"</span>: <span class="t-str">"function"</span>,
+        <span class="t-key">"calls"</span>: [
+          { <span class="t-key">"fqn"</span>: <span class="t-str">"logger.getEffectiveLevel"</span> },
+          { <span class="t-key">"fqn"</span>: <span class="t-str">"any"</span> }
+        ] },
+      { <span class="t-key">"fqn"</span>: <span class="t-str">"logger.addHandler"</span>, <span class="t-key">"kind"</span>: <span class="t-str">"unresolved"</span> }
+    ]
+  }
+<span class="t-brace">}</span></pre>
+                </div>
+            </div>
+
+            <!-- Impact -->
+            <div class="cli-card">
+                <div class="cli-header">
+                    <span class="cli-cmd">impact</span>
+                    <span class="cli-desc">Analyze blast radius of changing a file</span>
+                </div>
+                <div class="cli-terminal">
+                    <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="terminal-content"><span class="t-prompt">$</span> codemap impact /path/to/flask src/flask/app.py --json
+
+<span class="t-brace">{</span>
+  <span class="t-key">"file"</span>: <span class="t-str">"src/flask/app.py"</span>,
+  <span class="t-key">"direct_dependents"</span>: [
+    <span class="t-str">"src/flask/__init__.py"</span>,
+    <span class="t-str">"src/flask/cli.py"</span>,
+    <span class="t-str">"src/flask/ctx.py"</span>,
+    <span class="t-str">"src/flask/globals.py"</span>,
+    <span class="t-str">"src/flask/sessions.py"</span>,
+    <span class="t-str">"src/flask/testing.py"</span>
+  ],
+  <span class="t-key">"transitive_dependents"</span>: [
+    <span class="t-str">"src/flask/blueprints.py"</span>,
+    <span class="t-str">"src/flask/debughelpers.py"</span>,
+    <span class="t-str">"src/flask/helpers.py"</span>,
+    <span class="t-str">"src/flask/logging.py"</span>, ...
+  ],
+  <span class="t-key">"total_impact_radius"</span>: <span class="t-num">16</span>
+<span class="t-brace">}</span></pre>
+                </div>
+            </div>
+
+            <!-- Communities -->
+            <div class="cli-card">
+                <div class="cli-header">
+                    <span class="cli-cmd">communities</span>
+                    <span class="cli-desc">Detect architectural communities via Leiden algorithm</span>
+                </div>
+                <div class="cli-terminal">
+                    <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="terminal-content"><span class="t-prompt">$</span> codemap communities /path/to/flask --json
+
+<span class="t-brace">{</span>
+  <span class="t-key">"communities"</span>: <span class="t-num">15</span>,
+  <span class="t-key">"total_members_stored"</span>: <span class="t-num">42</span>,
+  <span class="t-key">"god_nodes"</span>: [
+    { <span class="t-key">"name"</span>: <span class="t-str">"explain_template_loading_attempts"</span>,
+      <span class="t-key">"total_degree"</span>: <span class="t-num">12</span> },
+    { <span class="t-key">"name"</span>: <span class="t-str">"_default"</span>,
+      <span class="t-key">"total_degree"</span>: <span class="t-num">9</span> },
+    { <span class="t-key">"name"</span>: <span class="t-str">"_merge_blueprint_funcs"</span>,
+      <span class="t-key">"total_degree"</span>: <span class="t-num">8</span> }
+  ],
+  <span class="t-key">"elapsed_seconds"</span>: <span class="t-num">0.0</span>
+<span class="t-brace">}</span></pre>
+                </div>
+            </div>
+
+            <!-- Update -->
+            <div class="cli-card">
+                <div class="cli-header">
+                    <span class="cli-cmd">update</span>
+                    <span class="cli-desc">Incremental re-index (only changed files)</span>
+                </div>
+                <div class="cli-terminal">
+                    <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="terminal-content"><span class="t-prompt">$</span> codemap update /path/to/flask --json
+
+<span class="t-brace">{</span>
+  <span class="t-key">"changed"</span>: <span class="t-num">0</span>,
+  <span class="t-key">"deleted"</span>: <span class="t-num">0</span>,
+  <span class="t-key">"t1_reparsed"</span>: <span class="t-num">0</span>,
+  <span class="t-key">"t2_reparsed"</span>: <span class="t-num">0</span>,
+  <span class="t-key">"symbols_updated"</span>: <span class="t-num">0</span>,
+  <span class="t-key">"elapsed_seconds"</span>: <span class="t-num">0.005</span>
+<span class="t-brace">}</span></pre>
+                </div>
+            </div>
+
+            <!-- Embed -->
+            <div class="cli-card">
+                <div class="cli-header">
+                    <span class="cli-cmd">embed</span>
+                    <span class="cli-desc">Build semantic vector index for natural language search</span>
+                </div>
+                <div class="cli-terminal">
+                    <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="terminal-content"><span class="t-prompt">$</span> codemap embed /path/to/flask --json
+
+<span class="t-brace">{</span>
+  <span class="t-key">"embedded"</span>: <span class="t-num">852</span>,
+  <span class="t-key">"total_indexed"</span>: <span class="t-num">852</span>,
+  <span class="t-key">"elapsed_seconds"</span>: <span class="t-num">2.26</span>,
+  <span class="t-key">"symbols_per_sec"</span>: <span class="t-num">377</span>
+<span class="t-brace">}</span></pre>
+                </div>
+            </div>
+
+            <!-- Focus -->
+            <div class="cli-card">
+                <div class="cli-header">
+                    <span class="cli-cmd">focus</span>
+                    <span class="cli-desc">Deep-analyze a directory (promote to Tier 2)</span>
+                </div>
+                <div class="cli-terminal">
+                    <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="terminal-content"><span class="t-prompt">$</span> codemap focus /path/to/flask src/flask/ --json
+
+<span class="t-brace">{</span>
+  <span class="t-key">"directory"</span>: <span class="t-str">"src/flask/"</span>,
+  <span class="t-key">"promoted"</span>: <span class="t-num">24</span>,
+  <span class="t-key">"symbols"</span>: <span class="t-num">403</span>,
+  <span class="t-key">"relations"</span>: <span class="t-num">745</span>,
+  <span class="t-key">"elapsed_seconds"</span>: <span class="t-num">0.1</span>
+<span class="t-brace">}</span></pre>
+                </div>
+            </div>
+
+            <!-- God-nodes -->
+            <div class="cli-card">
+                <div class="cli-header">
+                    <span class="cli-cmd">god-nodes</span>
+                    <span class="cli-desc">Find most-connected hub symbols</span>
+                </div>
+                <div class="cli-terminal">
+                    <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="terminal-content"><span class="t-prompt">$</span> codemap god-nodes /path/to/flask --top 5 --json
+
+<span class="t-brace">{</span>
+  <span class="t-key">"god_nodes"</span>: [
+    { <span class="t-key">"name"</span>: <span class="t-str">"explain_template_loading_attempts"</span>,
+      <span class="t-key">"out_degree"</span>: <span class="t-num">11</span>, <span class="t-key">"total_degree"</span>: <span class="t-num">12</span> },
+    { <span class="t-key">"name"</span>: <span class="t-str">"_default"</span>,
+      <span class="t-key">"out_degree"</span>: <span class="t-num">9</span>, <span class="t-key">"total_degree"</span>: <span class="t-num">9</span> },
+    { <span class="t-key">"name"</span>: <span class="t-str">"JSONTag"</span>,
+      <span class="t-key">"in_degree"</span>: <span class="t-num">8</span>, <span class="t-key">"total_degree"</span>: <span class="t-num">8</span> }
+  ],
+  <span class="t-key">"total"</span>: <span class="t-num">5</span>
+<span class="t-brace">}</span></pre>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="cli-card">
+                <div class="cli-header">
+                    <span class="cli-cmd">stats</span>
+                    <span class="cli-desc">Project statistics and overview</span>
+                </div>
+                <div class="cli-terminal">
+                    <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="terminal-content"><span class="t-prompt">$</span> codemap stats /path/to/flask --json
+
+<span class="t-brace">{</span>
+  <span class="t-key">"files"</span>: <span class="t-num">83</span>,
+  <span class="t-key">"symbols"</span>: <span class="t-num">852</span>,
+  <span class="t-key">"relations"</span>: <span class="t-num">745</span>,
+  <span class="t-key">"languages"</span>: { <span class="t-key">"python"</span>: <span class="t-num">83</span> },
+  <span class="t-key">"tiers"</span>: { <span class="t-key">"tier_1"</span>: <span class="t-num">59</span>, <span class="t-key">"tier_2"</span>: <span class="t-num">24</span> },
+  <span class="t-key">"db_size_mb"</span>: <span class="t-num">2.1</span>
+<span class="t-brace">}</span></pre>
+                </div>
+            </div>
+
+            <!-- Ingest-docs -->
+            <div class="cli-card">
+                <div class="cli-header">
+                    <span class="cli-cmd">ingest-docs</span>
+                    <span class="cli-desc">Parse PDFs, Office docs, markdown from folders</span>
+                </div>
+                <div class="cli-terminal">
+                    <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="terminal-content"><span class="t-prompt">$</span> codemap ingest-docs /path/to/repo --directory docs/ --json
+
+<span class="t-brace">{</span>
+  <span class="t-key">"documents_parsed"</span>: <span class="t-num">47</span>,
+  <span class="t-key">"sections_extracted"</span>: <span class="t-num">312</span>,
+  <span class="t-key">"code_references_detected"</span>: <span class="t-num">89</span>,
+  <span class="t-key">"formats"</span>: { <span class="t-key">"markdown"</span>: <span class="t-num">31</span>, <span class="t-key">"pdf"</span>: <span class="t-num">12</span>, <span class="t-key">"rst"</span>: <span class="t-num">4</span> }
+<span class="t-brace">}</span></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="callout">
+            All commands support <code>--json</code> for machine-readable output.
+            Add <code>--db-path</code> to control where the index is stored.
+            Use <code>--verbose</code> for debug logging.
+        </div>
+    </section>
+
+    <!-- API -->
+    <section class="section" id="api">
+        <div class="section-header">
+            <h2>Built for AI Agents</h2>
+            <p>Clean Python API. Every operation returns structured data. Zero configuration.</p>
+        </div>
+
+        <div class="code-block">
+<span class="code-keyword">from</span> codemap_scale.orchestrator <span class="code-keyword">import</span> CodeMapScale
+
+<span class="code-comment"># Index once (5s for 17K files)</span>
+cm = <span class="code-func">CodeMapScale</span>(<span class="code-string">"/path/to/repo"</span>)
+cm.<span class="code-func">scout</span>()
+
+<span class="code-comment"># Structural search (sub-ms)</span>
+cm.tools.<span class="code-func">search_structural</span>(<span class="code-string">"*Middleware*"</span>, kind=<span class="code-string">"class"</span>)
+
+<span class="code-comment"># Natural language search</span>
+cm.<span class="code-func">build_semantic_index</span>()
+cm.<span class="code-func">ask</span>(<span class="code-string">"what handles authentication?"</span>)
+
+<span class="code-comment"># Impact analysis</span>
+cm.tools.<span class="code-func">analyze_impact</span>(<span class="code-string">"src/auth/middleware.py"</span>)
+
+<span class="code-comment"># Architecture discovery</span>
+cm.<span class="code-func">detect_communities</span>()
+cm.tools.<span class="code-func">get_god_nodes</span>(top_n=<span class="code-string">10</span>)
+
+<span class="code-comment"># Incremental (only re-parse changed files)</span>
+cm.<span class="code-func">update</span>()
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <h2>The difference between stumbling and navigating.</h2>
+        <p>
+            CodeMap-Scale gives AI agents the same spatial awareness a senior engineer builds over years.
+            Index once. Query forever. Stay current incrementally.
+        </p>
+        <div class="cta-code">
+            pip install codemap-scale
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>Benchmarked on Apple Silicon | Rust backend (PyO3 + rayon) | SQLite WAL mode | May 2026</p>
+    </footer>
+</div>
+
+<script>
+function showTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

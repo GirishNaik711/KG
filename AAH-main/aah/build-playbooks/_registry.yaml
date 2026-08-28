@@ -1,0 +1,87 @@
+# =============================================================================
+# RAPIDS Build Playbooks — Registry
+# =============================================================================
+# Index of all Build Playbooks keyed by technology domain. The loader consults
+# this file to find playbooks without walking the filesystem.
+#
+# One playbook per technology domain. Add a new entry when a new project_type
+# is registered in activity-library/_registry.yaml.
+# =============================================================================
+
+registry_version: "1.0"
+last_updated: "2026-04-20"
+
+playbooks:
+  ai-infra-platforms:
+    file: ai-infra-platforms/build-playbook.yaml
+    name: "AI Infrastructure & Platforms Build Playbook"
+    published: true
+    description: "Engineering patterns, anti-patterns, and reference architectures for building AI infrastructure — agent frameworks, orchestration engines, model-serving platforms, MCP gateways, inference infrastructure, and agent hosting platforms. This horizontal covers the \"plumbing\" that AI applications are built on, not the applications themselves (those live under ai-applications)."
+    keywords:
+      strong:
+        - "agent framework"
+        - "mcp gateway"
+        - "model serving"
+        - "inference platform"
+        - "agent hosting"
+        - "agent infrastructure"
+        - "orchestration engine"
+      moderate:
+        - "orchestrator"
+        - "multi-agent framework"
+        - "llm gateway"
+        - "tool registry"
+        - "autonomous"
+
+  ai-applications:
+    file: ai-applications/build-playbook.yaml
+    name: "AI-Powered Applications Build Playbook"
+    published: true
+    description: "Engineering patterns, anti-patterns, and reference architectures for building end-user AI applications — chatbots, copilots, RAG apps, multi-agent applications, agentic workflows, assistants, content generation, and summarization products. This horizontal covers applications built on top of AI infrastructure (ai-infra-platforms), not the infrastructure itself."
+    keywords:
+      strong:
+        - "chatbot"
+        - "copilot"
+        - "rag"
+        - "multi-agent app"
+        - "agentic workflow"
+        - "llm app"
+        - "ai assistant"
+      moderate:
+        - "assistant"
+        - "llm-powered"
+        - "customer agent"
+        - "onboarding agent"
+        - "document q&a"
+        - "knowledge assistant"
+
+  aws-native-services:
+    file: aws-native-services/build-playbook.yaml
+    name: "AWS Native Services Build Playbook"
+    published: true
+    description: "The AWS AI/agentic delivery archetype — the services AAH can provision, connect to, validate (/aah-access), and deploy (aah-deploy) end-to-end (Bedrock, AgentCore Runtime/Memory/MCP, RDS/Aurora, DynamoDB, S3, OpenSearch, MSK, Bedrock Guardrails, CloudWatch, ECS Fargate, cloudless AgentCore), plus the pre-baked AgentCore/Bedrock agentic pathways. Select alongside an application/infra archetype for AWS-grounded delivery."
+    keywords:
+      strong:
+        - "aws"
+        - "bedrock"
+        - "agentcore"
+        - "aws-grounded"
+        - "amazon bedrock"
+        - "bedrock agentcore"
+      moderate:
+        - "dynamodb"
+        - "s3"
+        - "rds"
+        - "aurora"
+        - "opensearch"
+        - "cloudwatch"
+        - "ecs fargate"
+        - "bedrock guardrails"
+        - "sigv4"
+        - "sagemaker"
+
+# NOTE: Only authored playbooks are registered. Seven stub playbooks
+# (ai-platforms, data-pipelines, data-modernization, llm-ops, ml-ops,
+# cloud-modernization, security-updates) were removed from this registry so they
+# no longer surface as candidates. Their directories remain on disk (unwired) and
+# can be re-registered here once their build-playbook.yaml content is authored.

@@ -1,0 +1,16 @@
+schema_version: "1.0"
+regime: on-premises
+trigger_signals:
+  - on-premises
+  - on-prem
+  - on premise
+  - private datacenter
+  - no cloud
+  - self-hosted only
+  - data cannot leave
+
+mandates:
+  - mandate_id: CC-INFRA-ONPREM-001
+    statement: "Model inference must run on-premises. External LLM API calls are prohibited."
+  - mandate_id: CC-INFRA-ONPREM-002
+    statement: "Vector store must be self-hosted. Managed cloud vector databases are prohibited."

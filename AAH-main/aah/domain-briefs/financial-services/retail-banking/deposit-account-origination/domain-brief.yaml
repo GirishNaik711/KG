@@ -1,0 +1,38 @@
+id: financial-services/retail-banking/deposit-account-origination
+parent_id: financial-services/retail-banking
+level: 3
+stub: true
+name: "Deposit Account Origination"
+description: >
+  End-to-end opening of deposit products (checking, savings, CDs) for individual consumers — identity verification, KYC, funding, and account activation.
+
+typical_horizontals:
+  - ai-applications
+  - ai-infra-platforms
+
+keywords:
+  strong:
+    - "deposit account"
+    - "checking account"
+    - "savings account"
+    - "account opening"
+  moderate:
+    - "retail onboarding"
+    - "digital account"
+    - "new account"
+
+sample_problem_statements:
+  - "Digital checking account signup for a community bank"
+
+# Stub node: regulations, processes, data_entities, glossary, typical_integrations,
+# kpis, and patterns are inherited from the parent chain. Populate fields below
+# to specialize this node.
+
+processes: []
+data_entities: []
+glossary: []
+typical_integrations: []
+regulations: []
+kpis: []
+common_patterns: []
+anti_patterns: []

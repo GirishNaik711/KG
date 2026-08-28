@@ -1,0 +1,241 @@
+schema_version: "2.0"
+technology_domain: ai-infra-platforms
+name: "AI Infrastructure & Platforms Build Playbook"
+description: >
+  The AI-infrastructure archetype — the "plumbing" AI applications are built on:
+  agent frameworks, orchestration engines, model-serving platforms, MCP gateways,
+  inference infrastructure, and agent hosting platforms (not the applications
+  themselves, which live under ai-applications). The patterns below carry the
+  archetype-level framing; each names when it applies and what to avoid.
+
+published: true
+
+# NOTE: keywords for this archetype live ONLY in _registry.yaml (never in this body).
+
+# One cross-cutting instruction, applied in every phase (discuss, plan, build, deploy).
+guidance: >
+  Treat this as infrastructure, not an application: keep platform components
+  stateless with externalized state, expose tools through typed discovery, and put
+  safety/guardrails/observability/cost-budgets in middleware — never in prompts.
+  Apply the matching pattern's when_to_apply and avoid its anti-patterns. When this
+  playbook is selected alongside another, the effective scope is the intersection
+  of both.
+
+patterns:
+  - name: Tool Use Abstraction
+    description: >
+      Decouple tool definitions from agent logic. Tools should be declarative
+      (schema + handler) so agents discover and invoke them without knowing
+      implementation details. This is the backbone of any extensible agent
+      platform and a prerequisite for MCP-style tool exposure.
+    when_to_apply: >
+      Any platform where agents call external APIs, databases, or services —
+      especially one exposing tools to third-party agent clients.
+    anti_patterns:
+      - Hardcoding tool calls inline in prompt templates
+      - Letting the agent construct raw HTTP requests instead of using typed interfaces
+      - Missing input validation on tool parameters before execution
+      - Tools that bundle multiple unrelated operations behind one name
+
+  - name: Orchestrator-Worker Separation
+    description: >
+      Separate planning (orchestrator) from execution (workers). The orchestrator
+      decomposes tasks and assigns them; workers execute independently and
+      report back. Enables parallelism, fault isolation, and independent
+      scaling of plan-heavy vs. execution-heavy workloads.
+    when_to_apply: >
+      Multi-step agent workloads where subtasks are independent OR where
+      orchestration cost is substantially different from execution cost.
+    anti_patterns:
+      - Single monolithic agent trying to do everything sequentially
+      - Workers that mutate shared state without coordination
+      - Orchestrators that micro-manage every worker step
+      - Coupling orchestrator logic to a single worker implementation
+
+  - name: Guardrails and Safety Boundaries
+    description: >
+      Enforce constraints on agent actions before execution. Includes input
+      validation, output filtering, action allowlists, per-tool authorization,
+      and human-in-the-loop checkpoints for high-risk operations. Guardrails
+      live in platform middleware, not in prompts.
+    when_to_apply: >
+      Any agent infrastructure exposing tools that take actions with real-world
+      effects — writes data, sends messages, moves money, modifies infrastructure.
+    anti_patterns:
+      - Relying solely on prompt instructions for safety
+      - No distinction between read-only and write operations
+      - Missing audit trail for agent actions
+      - Guardrails applied only on the client side where agents can bypass them
+
+  - name: Structured Output Contracts
+    description: >
+      Define explicit schemas for agent outputs at each step. Use JSON Schema,
+      Pydantic, or typed interfaces to ensure agents produce parseable, validated
+      responses. For platforms, these contracts become the API between agent
+      steps and between agents and applications.
+    when_to_apply: >
+      When agent outputs feed into downstream systems, tools, or other agents —
+      effectively always, for a platform.
+    anti_patterns:
+      - Parsing free-text agent responses with regex
+      - No validation between agent steps in a pipeline
+      - Assuming the LLM will always produce valid JSON
+      - Silent coercion of invalid outputs into a default shape
+
+  - name: Evaluation-Driven Development
+    description: >
+      Build evaluation harnesses before building agents or platform features.
+      Define success metrics, create test datasets, and measure performance
+      systematically. For platforms, offer evaluation as a first-class
+      capability so platform users inherit it.
+    when_to_apply: >
+      From day one of any agent project. Platforms owe their users an
+      evaluation story, not vibes-based testing.
+    anti_patterns:
+      - Shipping agents without quantitative success metrics
+      - Testing only happy paths
+      - Using human evaluation as the only quality signal
+      - Evaluation harnesses that cannot be run in CI
+
+  - name: Context Window Management
+    description: >
+      Actively manage what enters the LLM context window. Summarize long
+      histories, use retrieval for large knowledge bases, track token budgets,
+      and prune stale context. For platforms, expose these as reusable
+      primitives rather than making each client solve it.
+    when_to_apply: >
+      Any agent operating over multiple turns or large datasets.
+    anti_patterns:
+      - Appending every interaction to context without summarization
+      - No strategy for include-in-context vs. retrieve-on-demand
+      - Ignoring context-window limits until you hit token errors
+      - Summarization that discards decisions needed for later turns
+
+  - name: Stateless Gateway + Externalized State
+    description: >
+      Platform components (gateways, routers, domain servers) should be
+      stateless. All session, conversation, rate-limit, circuit-breaker, and
+      cache state lives in an external store (Redis, DB). Enables horizontal
+      scaling, blue/green deploys, and failure domains smaller than a single
+      request.
+    when_to_apply: >
+      Any production AI platform expected to scale beyond a single pod.
+    anti_patterns:
+      - In-memory session stores that evaporate on restart
+      - Rate limiters local to a pod (permitting N× the intended rate)
+      - Sticky-session routing required for correctness
+      - State recovery that depends on manual intervention
+
+  - name: Circuit Breakers and Graceful Degradation
+    description: >
+      Every upstream dependency — LLM providers, tool backends, vector stores
+      — gets its own circuit breaker. Open circuits trigger defined fallbacks:
+      alternate provider, cached response, degraded-mode reply. Failure is
+      observable, bounded, and recoverable.
+    when_to_apply: >
+      Any platform with production SLOs or multi-provider LLM strategies.
+    anti_patterns:
+      - Single shared circuit breaker across unrelated dependencies
+      - Retries without backoff or budget
+      - No distinction between transient and permanent failures
+      - Fallback paths that are untested until the primary fails in prod
+
+  - name: Per-Tool Authorization and Rate Limits
+    description: >
+      Every tool exposed by the platform has explicit authorization rules
+      (which caller, which scope, which user) and its own rate limit. Tools
+      are not a single pool of uniform trust.
+    when_to_apply: >
+      Any multi-tenant platform or platform exposing tools over MCP or a
+      similar protocol.
+    anti_patterns:
+      - Single global rate limit for all tools
+      - Authorization checks in one place for some tools, none for others
+      - Tool metadata without access-level classification
+      - Consent flows that skip the tool-call context
+
+  - name: Prompt Injection Defense at the Edge
+    description: >
+      Assume every input is hostile. Validate shape, size, and encoding at
+      the edge; detect known injection patterns; isolate user content from
+      system content with structural delimiters; treat retrieved content as
+      untrusted in the same way.
+    when_to_apply: >
+      Any platform that accepts user input or retrieves content from
+      systems outside the platform boundary.
+    anti_patterns:
+      - Sanitization only at the application layer
+      - Mixing user content and system instructions in the same string
+      - Trusting retrieved content because the retrieval system is trusted
+      - Denylists without corresponding structural defenses
+
+  - name: Observability First-Class
+    description: >
+      Every LLM call, tool call, and agent step emits structured telemetry:
+      trace ID, span, latency, tokens in/out, cost, provider, model, outcome.
+      Platforms should make opting out of observability harder than opting in.
+    when_to_apply: >
+      Every production AI platform.
+    anti_patterns:
+      - Logs without trace IDs spanning agent steps
+      - Cost telemetry as an afterthought added post-incident
+      - Sampling that drops error-path traces
+      - Custom metric names that make cross-platform dashboards impossible
+
+  - name: Declarative Agent Configuration
+    description: >
+      Agent capabilities — tools, models, policies, retrieval sources — are
+      declared in versioned config (YAML, JSON) rather than baked into
+      application code. Enables agent composition without redeploy.
+    when_to_apply: >
+      Platforms exposing multiple agent personalities or tenant-specific
+      customization.
+    anti_patterns:
+      - Agent "registration" that requires code changes and redeploys
+      - Config scattered across runtime env vars with no single source of truth
+      - No versioning for agent configurations
+      - Config schemas without validation
+
+  - name: Multi-Provider LLM Abstraction
+    description: >
+      Treat LLM providers as pluggable. One interface, multiple backends
+      (Claude, OpenAI, Gemini). Platform routes based on cost, latency,
+      capability, and availability. Isolates applications from provider churn.
+    when_to_apply: >
+      Production platforms where provider outages or pricing changes are
+      business risks.
+    anti_patterns:
+      - Coupling prompts to a single provider's exact feature set
+      - Provider-specific retry/backoff logic duplicated across components
+      - No way to A/B test a different provider without a redeploy
+      - Abstraction so thin it becomes a leaky pass-through
+
+  - name: Typed Tool Discovery (MCP-style)
+    description: >
+      Platforms expose tools to agents through a typed discovery protocol
+      (MCP or equivalent). Agents discover available tools + their schemas at
+      runtime rather than hardcoding. Enables dynamic capability composition
+      and safer migration.
+    when_to_apply: >
+      Any platform that must serve multiple agent clients or multiple tool
+      catalogs.
+    anti_patterns:
+      - Tool catalogs dumped entirely into every agent's system prompt
+      - Catalogs without pagination for large tool counts
+      - No schema evolution strategy for tools
+      - Tool descriptions written for humans but not for LLM reasoning
+
+  - name: Cost Budgets as a First-Class Primitive
+    description: >
+      Every tenant, agent, and session has explicit token/cost budgets.
+      Budgets are enforced at the gateway, surfaced in user-facing UIs, and
+      tied to alerting. Cost runaway is the most common failure mode in
+      production agent systems.
+    when_to_apply: >
+      Any platform where users can trigger LLM calls indirectly or where
+      multi-turn agents can enter loops.
+    anti_patterns:
+      - Cost alerting added only after the first surprise invoice
+      - Budget checks that race with concurrent agent steps
+      - No max-iteration guard on agentic loops
+      - Budget enforcement silently truncating context with no user signal

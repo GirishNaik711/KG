@@ -1,0 +1,75 @@
+schema_version: "1.0"
+
+# Design-system registry — the extensibility point for the aah-ux skill.
+#
+# Read at aah-ux Step 2.5 (Checkpoint 3 of 6): one AskUserQuestion option is
+# rendered per entry below, using its `label`. The matched entry's five
+# contract slots are held as $TOKEN_SOURCE / $COMPONENT_MODEL / $GUIDANCE /
+# $INSTALL / $BINDING and written into the project's design-spec.yaml
+# (Step 4d). Also read by aah/agents/aah-module-to-feature.md (to resolve the
+# guidance slot for a ui module) and by frontend_guidance.md §0.
+#
+# Adding a design system is a new entry HERE — never an edit to the skill.
+# AskUserQuestion caps options at 4, so keep this list at 4 entries or fewer.
+# Do NOT add an "Other" entry: the tool already offers free text on every
+# question, and aah-ux Step 2.5 defines the defaults for a free-text answer
+# (token_source: generated, component_model: composition, guidance.ref: the
+# user's description, install: none, binding.raw_hex: within-tokens).
+#
+# Contract slots:
+#   token_source     fixed | library | generated
+#   component_model  composition | library
+#   guidance         skill: <skill name> | ref: <doc> | library: <package>
+#   install          none | "<recipe string>"
+#   binding.raw_hex  forbidden | within-tokens
+
+systems:
+  - id: deloitte-brand
+    label: "Deloitte brand"
+    description: >-
+      Deloitte brand guidelines as the UI direction — fixed green palette,
+      Open Sans typography, clean professional style. Components are composed
+      from brand tokens rather than imported from a library.
+    token_source: fixed
+    component_model: composition
+    guidance:
+      skill: aah-deloitte-brand
+    install: none
+    binding:
+      raw_hex: forbidden
+
+  - id: frontend-design
+    label: "Bespoke visual identity (generated)"
+    description: >-
+      Generate a distinctive per-project visual identity — an invented token
+      system (4–8 named colors, display+body+mono pairing, a signature
+      element) per frontend_guidance.md. This is the system whose palette
+      itself diverges across the Step 3.5 direction comps.
+    token_source: generated
+    component_model: composition
+    guidance:
+      ref: frontend_guidance.md
+    install: none
+    binding:
+      raw_hex: within-tokens
+
+# --- Not enabled -------------------------------------------------------------
+# The Deloitte Digital Design System (dds) entry is intentionally absent.
+# aah-ux's dds branches (the Step 3 archetype classification, the Archetype
+# column, `components:` in design-spec.yaml instead of `compose:`) are gated on
+# `$UI_SYSTEM == dds` and therefore stay dormant while it is unregistered.
+#
+# Before adding the entry below, the archetype library it depends on must
+# exist at _references/frontend-design/archetypes/ (_archetype-index.md plus
+# one file per archetype) — aah-ux Step 3 and aah-module-to-feature.md both
+# read those paths for a dds screen, and will dead-end without them.
+#
+#   - id: dds
+#     label: "Deloitte Digital Design System (DDS)"
+#     token_source: library
+#     component_model: library
+#     guidance:
+#       library: "@deloitte-us-consulting/dds"
+#     install: "<registry install recipe, or a project-level vendor/ tarball if offline>"
+#     binding:
+#       raw_hex: forbidden

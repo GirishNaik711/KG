@@ -1,0 +1,3 @@
+- [User role](user-role.md) — developer of the AAH harness itself, working on internals
+- [Feature-spec v2 redesign](feature-spec-v2-redesign.md) — 1 module=1 feature, test-cases-as-DoD, drop File Scope/AC/Knowledge Used (branch feature/5.2_plan_v2)
+- [Lean build TDD](lean-build-tdd.md) — /aah-build as sequential single-worktree driver triggering a vanilla-TDD feature-implementer

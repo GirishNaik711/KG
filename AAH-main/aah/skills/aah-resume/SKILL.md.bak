@@ -1,0 +1,112 @@
+---
+name: rapids-resume
+description: Resume the RAPIDS project in the current folder mid-session
+user-invocable: true
+disable-model-invocation: true
+---
+
+# Resume a RAPIDS Project
+
+Pick up the RAPIDS project in the current folder — surface its status and the
+recommended next action. In the folder=project model, the project is simply the
+folder you opened Claude in (the one containing `.rapids/`); there is no
+workspace list and no project switching.
+
+## Steps
+
+### 1. Resolve the Project (from cwd)
+
+```bash
+PROJECT_DIR=$(aah run core.common.config project-path)
+```
+
+This walks up from the current directory to the folder holding
+`.rapids/manifest.yaml`.
+
+### 2. Handle No Project Found
+
+If the command fails (no project resolves from cwd):
+- Tell the user: "No RAPIDS project in this folder. `cd` to your project folder,
+  or run `/rapids-new-project` here to create one."
+- **STOP** — do not continue.
+
+Otherwise confirm `$PROJECT_DIR` contains `.rapids/manifest.yaml`. If not, report
+an error and stop.
+
+### 6. Gather Project Status
+
+```bash
+RAPIDS_DIR="$PROJECT_DIR/.rapids"
+aah run core.common.manifest get-status
+aah run core.common.progress summary
+aah run core.common.feature_list summary
+```
+
+### 7. Load Context and Recommended Action
+
+```bash
+aah run core.implement.load_impl_context --project-path "$PROJECT_DIR"
+```
+
+Extract: `status_summary` and `recommended_action` from the output.
+
+If `load_impl_context` fails (e.g., project has no `claude-progress.json`), treat the project as phase `init` and recommend `/rapids-research`.
+
+### 7.5. Check Cloud Readiness Status (cross-cutting)
+
+Cloud readiness is independent of the current phase — services validated/not-tested/failed should be surfaced regardless of whether manifest says analysis, plan, implement, etc.
+
+```bash
+aah run core.gates.validate_cloud_readiness --project-path "$PROJECT_DIR" --check-state
+```
+
+Parse the JSON. If `gate_status` is `"pending"`:
+- Count services with `status: not-tested` and `status: fail` (excluding ones in `overrides`)
+- If any pending services exist, prepend a high-priority recommendation:
+
+  ```
+  ⚠️  Cloud Readiness Pending
+  {N} service(s) not yet validated:
+    - {service_name_1} ({status})
+    - {service_name_2} ({status})
+    ...
+
+  Recommended: Resume cloud readiness validation before proceeding with {phase}.
+  ```
+
+This recommendation overrides the phase-based recommendation when cloud readiness is incomplete — because a deploy or implement phase that depends on unverified infrastructure is risky.
+
+If `gate_status` is `"passed"` or `"skipped"`, or the file doesn't exist, skip this section.
+
+### 8. Display Resume Summary
+
+Present a formatted summary to the user:
+- Project name
+- Path
+- Current phase
+- Complexity tier (from manifest)
+- Feature progress (completed / total)
+- **Cloud readiness status** (if present): pass count / total + any pending services
+- Recommended next action — prefer cloud readiness completion if pending, else phase-appropriate
+
+### 9. Ask User What To Do Next
+
+Use `AskUserQuestion`:
+- **question**: "What would you like to do?"
+- **header**: "Next action"
+- **multiSelect**: false
+- Build options dynamically. If cloud readiness is pending (from Step 7.5), the FIRST option must be:
+  - **label**: "Resume cloud readiness validation"
+  - **description**: "{N} service(s) still need validation — handle these before proceeding"
+  - When selected, invoke the per-service validation loop directly:
+    1. Read existing `cloud-readiness.yaml`
+    2. For each service with status `not-tested` or `fail` (and not in overrides), prompt the user for inputs (or skip)
+    3. Run `aah run core.gates.validate_cloud_readiness ... --services {service_type} --config '...'` for each
+    4. Show per-service result, ask for retry/override/skip on failure
+    5. After loop completes, run `--check-state` and display final summary
+
+Other options:
+  - The phase-appropriate command (e.g., "Run /rapids-implement" for implement phase, "Run /rapids-plan" for plan phase, "Run /rapids-research" for init phase)
+  - "View full status" (description: "Run /rapids-status for detailed project status")
+
+If the user selects a command, invoke the corresponding skill.

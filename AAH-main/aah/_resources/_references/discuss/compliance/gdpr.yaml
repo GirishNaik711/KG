@@ -1,0 +1,20 @@
+schema_version: "1.0"
+regime: gdpr
+trigger_signals:
+  - gdpr
+  - eu data
+  - european union
+  - data subject
+  - right to erasure
+  - right to be forgotten
+  - data protection officer
+  - dpo
+  - schrems
+
+mandates:
+  - mandate_id: CC-GDPR-001
+    statement: "Personal data of EU data subjects must be processed only in GDPR-adequate jurisdictions or under SCCs."
+  - mandate_id: CC-GDPR-002
+    statement: "Every application storing personal data per user must support erasure within 30 days."
+  - mandate_id: CC-GDPR-003
+    statement: "A DPA must exist with every sub-processor including model providers handling personal data."

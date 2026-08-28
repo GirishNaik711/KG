@@ -1,0 +1,146 @@
+schema_version: "1.0"
+archetype: ai-applications
+description: >
+  Guidance file for /aah-discuss. Contains the mandatory questions that
+  the skill's Step 8 walk seeds from and Step 10a validates against.
+  All questions where applies_when is not "always", must be asked in consecutive rounds, after gating questions are probed, as part of the Mandatory Questions activity. 
+  Follows the reference-file constraint model:
+  every option can declare `references: [<catalog file paths>]`. Selecting
+  the option activates those files; `always_references` at the top level
+  applies irrespective of chosen options. Port activation is ports-driven:
+  an option's `activates: [<ACT-ID>]` names a catalog port id (see
+  aah/_resources/_references/_ports/_registry.yaml), fired by ports.executor compile.
+
+# Mandate catalog files applied unconditionally in the given `applies_when`.
+# Currently empty — no org-scope or always-active mandates are wired. Add entries
+# here if a mandate should activate whenever a condition holds (e.g. cloud=cloud
+# triggering an AWS-only mandate).
+always_references: []
+
+# ─── Mandatory questions (Check A coverage floor) ──────────────────────────
+mandatory_questions:
+
+  - slug_id: cloud-vs-local
+    applies_when: always
+    question: "Where will this system run?"
+    response_type: single-select
+    inline_options:
+      - {value: cloud, label: "Cloud", description: "Deployed to a cloud provider", activates: ["ACT-ACCESS"], references: []}
+      - {value: local, label: "Local / on-device", description: "Runs entirely on developer machines or on-prem hardware", activates: [], references: []}
+
+  - slug_id: data-storage-present
+    applies_when: always
+    question: "Does this system persist data (files, database, cache)?"
+    response_type: single-select
+    inline_options:
+      - {value: "yes", label: "Yes — storage required", description: "System writes to a durable store (SQL/NoSQL/blob/vector/file)", activates: [], references: []}
+      - {value: "no", label: "No — stateless", description: "In-memory only; no persistence between invocations", activates: [], references: []}
+
+  - slug_id: custom-ui-required
+    applies_when: always
+    question: "Does this system need a custom user interface?"
+    response_type: single-select
+    inline_options:
+      - {value: "yes", label: "Yes — custom UI", description: "Bespoke front-end, dashboard, or interactive surface", activates: ["ACT-UX"], references: []}
+      - {value: "no", label: "No — headless / API-only", description: "Consumed by other systems, chat clients, or CLI only", activates: [], references: []}
+
+  - slug_id: cloud-provider
+    applies_when: "cloud-vs-local == cloud"
+    question: "Which cloud provider?"
+    response_type: single-select
+    inline_options:
+      - value: aws
+        label: "AWS (AAH currently only support AWS Integrated Development)"
+        description: "Amazon Web Services"
+        activates: ["ACT-ACCESS"]
+        references:
+          - "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html"
+          - "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/machine-learning.html"
+
+  - slug_id: compliance-regimes
+    applies_when: always
+    question: "Which compliance regimes apply to this system?"
+    response_type: multi-select
+    # references[] point at compliance mandate files. The regime YAMLs live at
+    # aah/_resources/_references/discuss/{compliance,infrastructure}/<regime>.yaml
+    # and use the DDR-era ddr_id-keyed closes_options[] shape. Paths are stored
+    # package-relative (base = the aah/ package dir), so every consumer resolves
+    # them the same way as playbook/domain-brief paths: `$(aah path)/<path>`.
+    # Check E's slug-native validator skips those rows deterministically, but the
+    # /aah-discuss main session reads the mandate.statement fields from any active
+    # regime file and applies them as SOFT guidance when generating options for
+    # downstream areas (see Step 8 "prepare each area's options INLINE" in
+    # aah/skills/aah-discuss/SKILL.md).
+    inline_options:
+      - {value: hipaa,      label: "HIPAA",             description: "Protected health information / covered entity",           activates: [], references: ["_resources/_references/discuss/compliance/hipaa.yaml"]}
+      - {value: soc2,       label: "SOC 2",             description: "Service organization controls",                            activates: [], references: ["_resources/_references/discuss/compliance/soc2.yaml"]}
+      - {value: gdpr,       label: "GDPR",              description: "EU personal data processing",                              activates: [], references: ["_resources/_references/discuss/compliance/gdpr.yaml"]}
+      - {value: pci-dss,    label: "PCI-DSS",           description: "Payment card data",                                        activates: [], references: ["_resources/_references/discuss/compliance/pci-dss.yaml"]}
+      - {value: bsa-aml,    label: "BSA / AML",         description: "Bank Secrecy Act / Anti-Money Laundering",                 activates: [], references: ["_resources/_references/discuss/compliance/bsa-aml.yaml"]}
+      - {value: on-prem,    label: "On-premises only",  description: "No cloud egress; workloads run in customer datacenter",    activates: [], references: ["_resources/_references/discuss/infrastructure/on-premises.yaml"]}
+      - {value: air-gapped, label: "Air-gapped",        description: "No internet connectivity permitted",                       activates: [], references: ["_resources/_references/discuss/infrastructure/air-gapped.yaml"]}
+      - {value: sovereign,  label: "Sovereign cloud",   description: "Data residency constrained to a specific jurisdiction",    activates: [], references: ["_resources/_references/discuss/infrastructure/sovereign-cloud.yaml"]}
+      - {value: none,       label: "None",              description: "No specific regime applies",                               activates: [], references: []}
+
+  - slug_id: cli-installed
+    applies_when: "development-methodology == full-integrated-cloud"
+    question: "Do you have the AWS CLI (or your provider's CLI) installed and configured?"
+    response_type: single-select
+    inline_options:
+      - {value: "yes", label: "Yes",  description: "CLI is installed and authenticated",              activates: [], references: []}
+      - {value: "no",  label: "No",   description: "CLI is not installed or not yet configured",      activates: [], references: []}
+
+  - slug_id: docker-installed
+    applies_when: always
+    question: "Do you have Docker (or a compatible container runtime) installed?"
+    response_type: single-select
+    inline_options:
+      - {value: "yes", label: "Yes",  description: "Docker/Podman/containerd is available",           activates: [], references: []}
+      - {value: "no",  label: "No",   description: "No container runtime installed",                   activates: [], references: []}
+
+  - slug_id: development-methodology
+    applies_when: "cloud-vs-local == cloud"
+    question: "How will your team develop this system across local & cloud environments?"
+    response_type: single-select
+    inline_options:
+      - value: local-cloud-ready
+        label: "Local, cloud-ready"
+        description: "Code uses cloud adapters actively. Local shell for dev; no-shell fallback connects directly to AWS."
+        activates: ["ACT-ACCESS"]
+        references: []
+      - value: full-integrated-cloud
+        label: "Full integrated cloud"
+        description: "Connects directly to AWS services — real cloud endpoints validated end-to-end."
+        activates: ["ACT-ACCESS"]
+        references: []
+
+  - slug_id: backend-compute-platform
+    applies_when: "cloud-provider == aws"
+    question: "How should the AI-agent backend be deployed on AWS?"
+    response_type: single-select
+    inline_options:
+      - {value: agentcore-runtime, label: "AgentCore Runtime", description: "AWS Bedrock AgentCore Runtime — managed, framework-agnostic (Strands/LangGraph/ADK/OpenAI/custom); packaged via CodeZip. Frontend on Amplify.", activates: ["/aah-access"], references: ["https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html"]}
+      - {value: ecs-express-mode, label: "ECS Fargate", description: "Container on ECS Fargate + ALB (Dockerfile, CodeBuild).", activates: [], references: []}
+      - {value: cloudless-managed, label: "Cloudless (LangGraph)", description: "LangGraph-only managed runtime via the cloudless SDK.", activates: [], references: []}
+      - {value: self-managed, label: "Self-managed IaC", description: "Generate IaC; you deploy yourself.", activates: [], references: []}
+
+
+
+# Follow-up questions are NOT hardcoded. Step 8's inline option prep (in the
+# main /aah-discuss session — no subagent) generates them per project based
+# on the chosen mandatory answers and the gray areas identified at Step 6.
+follow_up_questions: []
+
+# ─── Forbidden options (Check B) ──────────────────────────────────────────
+forbidden_options: []
+
+# ─── Whitelists (Check C) ─────────────────────────────────────────────────
+# Empty — cloud-provider previously locked to [aws]; expanded to [aws, gcp, azure]
+# as legal options. If your org needs to hard-constrain the provider, add:
+#   cloud-provider: [<allowed values>]
+inline_whitelists: {}
+
+# ─── Service scope (Check D) ──────────────────────────────────────────────
+service_scope:
+  approved: []
+  forbidden: []

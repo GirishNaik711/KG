@@ -1,0 +1,21 @@
+id: aah-idor-user-endpoint
+
+info:
+  name: IDOR on User Endpoint
+  author: aah-security
+  severity: high
+  tags: aah,idor,authz
+  description: Tests if user endpoints are accessible with other users' IDs
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/users/{{user_id_other}}"
+    headers:
+      Authorization: "Bearer {{auth_token_user_a}}"
+    matchers:
+      - type: status
+        status: [200]
+      - type: word
+        words: ["email", "profile"]
+        condition: and

@@ -1,0 +1,208 @@
+# Template: Cloudless Deployment Spec
+# Applied when DDR-L2-001=langgraph AND DDR-SHARED-017=cloudless-managed
+#
+# This template constrains how the deployment/infrastructure spec (typically SPEC-003)
+# is written during the Plan phase. It ensures the spec references cloudless SDK
+# deployment mechanics — NOT langgraph deploy, NOT raw Terraform/IaC.
+#
+# The plan-phase spec-writing agent MUST use this template when writing any spec
+# whose scope includes deployment, infrastructure, or CI/CD for a cloudless project.
+
+template_version: "1.0"
+applies_when:
+  - ddr_id: DDR-L2-001
+    resolved_option: langgraph
+  - ddr_id: DDR-SHARED-017
+    resolved_option: cloudless-managed
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BACKEND DEPLOYMENT — via cloudless SDK
+# ═══════════════════════════════════════════════════════════════════════════════
+
+backend_deployment:
+  method: "cloudless SDK"
+  cli_command: "cloudless deploy <agent-name> --region <region>"
+  config_file: "cloudless.yaml"  # NOT langgraph.json
+
+  description: >
+    The cloudless SDK packages the LangGraph agent (decorated with @cloudless.agent),
+    builds a container image, pushes it to the cloud provider's container registry,
+    and registers it with the managed agent runtime.
+
+  required_files:
+    - file: "cloudless.yaml"
+      description: "Cloudless project configuration — agent name, cloud target, service catalog"
+      generated_by: "cloudless-deploy-engineer agent during /aah-deploy"
+    - file: "src/agents/{project_name}_agent.py"
+      description: "Agent class with @cloudless.agent decorator"
+      generated_by: "feature-implementer during /aah-build"
+    - file: "pyproject.toml"
+      description: "Python dependencies including cloudless[langgraph,{cloud}]"
+      generated_by: "feature-implementer during /aah-build"
+
+  # What cloudless.yaml looks like (generated during deploy, not plan)
+  config_example:
+    aws: |
+      project: {project_name}
+      default_cloud: aws
+      clouds:
+        aws:
+          accounts:
+            prod: {region: us-east-1}
+      agents:
+        {agent_name}:
+          cloud: aws
+          framework: langgraph
+          interfaces: [http]
+    gcp: |
+      project: {project_name}
+      default_cloud: gcp
+      clouds:
+        gcp:
+          projects:
+            prod: {project_id: "...", region: us-central1}
+      agents:
+        {agent_name}:
+          cloud: gcp
+          framework: langgraph
+          interfaces: [http]
+
+  cloud_specific:
+    aws:
+      runtime: "AWS Bedrock AgentCore"
+      container_registry: "ECR (with KMS encryption)"
+      deploy_command: "cloudless deploy <agent> --region us-east-1"
+      credentials: "boto3 credential chain (aws configure / aws configure sso)"
+      output: "Runtime ARN + endpoint ARN"
+    gcp:
+      runtime: "GCP Vertex AI Agent Engine"
+      container_registry: "Artifact Registry (via cloudless)"
+      deploy_command: "cloudless deploy <agent> --region us-central1"
+      credentials: "Google ADC (gcloud auth login / gcloud auth application-default login)"
+      output: "Reasoning Engine resource name"
+
+  # WRONG patterns — spec writers must NOT use these
+  anti_patterns:
+    - pattern: "langgraph deploy"
+      reason: "That's LangGraph Platform (LangSmith hosted). Cloudless deploys to YOUR cloud account."
+    - pattern: "langgraph.json"
+      reason: "That's LangGraph Platform config. Cloudless uses cloudless.yaml."
+    - pattern: "terraform"
+      reason: "Cloudless manages infrastructure. No Terraform needed for the agent runtime."
+    - pattern: "Dockerfile"
+      reason: "Cloudless builds the container automatically. No Dockerfile for backend."
+    - pattern: "docker-compose"
+      reason: "Cloudless is not container-orchestration. It deploys to managed runtimes."
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FRONTEND DEPLOYMENT (if frontend exists)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+frontend_deployment:
+  aws:
+    method: "ECS Express Mode"
+    description: "Build Dockerfile, push to ECR, deploy via ECS Express (fast single-container)."
+    requires_dockerfile: true
+    deploy_command: "Handled by frontend-deploy-engineer agent"
+  gcp:
+    method: "Cloud Run via buildpacks"
+    description: "Source-based deploy. No Dockerfile needed — Cloud Run auto-detects Node.js."
+    requires_dockerfile: false
+    deploy_command: |
+      gcloud run deploy {frontend_service_name} \
+        --source frontend/ \
+        --project $GOOGLE_CLOUD_PROJECT \
+        --region us-central1 \
+        --allow-unauthenticated \
+        --set-env-vars "VITE_API_BASE_URL=$BACKEND_URL"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CI/CD — how to reference deployment in pipeline specs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+cicd:
+  deploy_step_backend:
+    description: "CI/CD pipeline deploys backend via cloudless CLI"
+    commands:
+      - "pip install cloudless[langgraph,{cloud}]"
+      - "cloudless deploy <agent> --region <region>"
+    auth:
+      aws: "AWS credentials via OIDC (GitHub Actions) or IAM role"
+      gcp: "Workload Identity Federation (GitHub Actions OIDC → GCP SA)"
+
+  deploy_step_frontend:
+    aws:
+      - "docker build -t {ecr_uri}:latest frontend/"
+      - "docker push {ecr_uri}:latest"
+      - "aws ecs update-service ..."
+    gcp:
+      - "gcloud run deploy {service} --source frontend/ --region us-central1"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENVIRONMENT VARIABLES — what the agent needs at runtime
+# ═══════════════════════════════════════════════════════════════════════════════
+
+runtime_env_vars:
+  description: >
+    Cloudless agents use the service_catalog in cloudless.yaml for LLM/memory config.
+    Runtime env vars are minimal — the cloud provider's default credentials (ADC/IAM role)
+    handle authentication automatically.
+  common:
+    - name: LOG_LEVEL
+      description: "Logging verbosity"
+      default: "INFO"
+  aws_specific:
+    - name: AWS_REGION
+      description: "AWS region for Bedrock models"
+      default: "us-east-1"
+  gcp_specific:
+    - name: GOOGLE_CLOUD_PROJECT
+      description: "GCP project ID"
+      source: "Set automatically by Vertex AI Agent Engine"
+    - name: GOOGLE_CLOUD_LOCATION
+      description: "GCP region"
+      source: "Set automatically by Vertex AI Agent Engine"
+  note: >
+    No API keys or secrets needed at runtime for LLM access.
+    AWS uses IAM role attached to AgentCore runtime.
+    GCP uses service account attached to Agent Engine.
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SPEC WRITING RULES — for plan-phase spec-writing agents
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_writing_rules:
+  - rule: "Backend deploys via cloudless CLI, NOT langgraph deploy"
+    detail: >
+      The deployment command is: cloudless deploy <agent-name> --region <region>
+      The config file is: cloudless.yaml (generated during deploy phase)
+      Do NOT reference langgraph.json, langgraph deploy, or LangGraph Platform.
+
+  - rule: "No Dockerfile for backend"
+    detail: >
+      Cloudless builds the container automatically from the agent source code.
+      Do NOT include Dockerfile in backend deployment requirements.
+
+  - rule: "No Terraform/IaC for agent runtime"
+    detail: >
+      Cloudless manages the agent runtime infrastructure. The only IaC that might
+      exist is for peripheral resources (secrets manager, IAM roles for CI/CD).
+
+  - rule: "cloudless.yaml is generated during deploy phase, not plan phase"
+    detail: >
+      The spec should reference cloudless.yaml as the deployment config but
+      should NOT define its full contents. The cloudless-deploy-engineer agent
+      generates it based on the actual project structure.
+
+  - rule: "Credentials via cloud SDK chains, never stored in code"
+    detail: >
+      AWS: boto3 credential chain (aws configure sso / IAM role)
+      GCP: Application Default Credentials (gcloud auth login / attached SA)
+      CI/CD: OIDC federation (GitHub Actions → cloud IAM)
+      No API keys, no .env files with secrets, no secrets in git.
+
+  - rule: "Agent is a @cloudless.agent class, not a bare graph export"
+    detail: >
+      The deployable unit is a Python class decorated with @cloudless.agent.
+      It has set_up() and build() methods. build() returns a compiled StateGraph.
+      Do NOT describe the agent as a module-level graph variable.

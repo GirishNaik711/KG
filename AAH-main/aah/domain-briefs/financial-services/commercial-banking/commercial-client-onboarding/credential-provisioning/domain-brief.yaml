@@ -1,0 +1,162 @@
+id: financial-services/commercial-banking/commercial-client-onboarding/credential-provisioning
+parent_id: financial-services/commercial-banking/commercial-client-onboarding
+level: 4
+name: "Credential Provisioning"
+description: >
+  Issuing digital access for the newly onboarded commercial client: digital
+  banking credentials for authorized users, MFA enrollment, API credentials
+  and tokens for treasury / ACH / wire integration, and welcome
+  communications that convey access securely.
+
+typical_horizontals:
+  - ai-applications
+  - ai-infra-platforms
+
+keywords:
+  strong:
+    - "credential provisioning"
+    - "mfa enrollment"
+    - "digital banking credentials"
+    - "api credentials"
+  moderate:
+    - "secure onboarding"
+    - "user provisioning"
+    - "token issuance"
+    - "welcome package"
+
+sample_problem_statements:
+  - "Automate secure digital banking credential issuance for commercial clients"
+  - "Build a treasury-API onboarding flow with certificate-based authentication"
+
+processes:
+  - name: "User Provisioning"
+    steps:
+      - "Create digital banking user accounts for each authorized person"
+      - "Assign roles and entitlement sets"
+      - "Generate initial credentials (one-time activation code)"
+  - name: "MFA Enrollment"
+    steps:
+      - "Issue MFA setup instructions via secure channel (not email password)"
+      - "Guide user through TOTP/FIDO2/push-auth enrollment"
+      - "Require MFA completion before first transactional access"
+  - name: "API Credential Issuance"
+    steps:
+      - "Generate API keys for treasury / wire / ACH integrations"
+      - "Issue and install client certificates for mutual-TLS where used"
+      - "Record key identifiers (not secrets) in audit log"
+      - "Rotate initial bootstrap credentials to production credentials"
+  - name: "Welcome Package Delivery"
+    steps:
+      - "Send welcome email with portal URL and activation instructions"
+      - "Send activation code via separate secure channel (SMS/phone)"
+      - "Enforce short expiration on activation codes"
+      - "Provide contact info for relationship manager"
+
+data_entities:
+  - name: "DigitalBankingUser"
+    attributes:
+      - "userId"
+      - "personId"
+      - "clientEntityId"
+      - "username"
+      - "rolesAssigned (array)"
+      - "mfaEnrolledAt"
+      - "mfaMethod (totp, fido2, push)"
+      - "activationStatus (pending, active, locked)"
+  - name: "APICredential"
+    attributes:
+      - "credentialId"
+      - "clientEntityId"
+      - "scopeType (treasury, ach-origination, wire-initiation)"
+      - "credentialType (api-key, client-cert, oauth-client)"
+      - "issuedAt"
+      - "expiresAt"
+      - "rotatedAt"
+      - "lastUsedAt"
+      - "status (active, rotated, revoked)"
+  - name: "WelcomePackageDelivery"
+    attributes:
+      - "deliveryId"
+      - "caseId"
+      - "recipientUserId"
+      - "channel (email, mail, phone)"
+      - "deliveredAt"
+      - "activationCodeExpiresAt"
+
+glossary:
+  - term: "MFA"
+    definition: "Multi-Factor Authentication — requiring two or more independent verification factors."
+  - term: "TOTP"
+    definition: "Time-based One-Time Password — standardized MFA using rotating 6-digit codes."
+  - term: "FIDO2"
+    definition: "Modern standard for strong phishing-resistant authentication using hardware or platform authenticators."
+  - term: "mTLS"
+    definition: "Mutual TLS — authentication where both client and server present certificates."
+  - term: "Out-of-band delivery"
+    definition: "Sending activation credentials through a different channel than the one used to establish initial contact."
+
+typical_integrations:
+  - "Identity providers (Okta, Azure AD, Ping)"
+  - "MFA services (Duo, Okta Verify, Microsoft Authenticator)"
+  - "Secrets/credential managers (HashiCorp Vault, AWS Secrets Manager)"
+  - "Certificate authorities (internal PKI or hosted)"
+  - "Email and SMS providers with delivery audit"
+
+regulations:
+  - name: "FFIEC Authentication Guidance"
+    impact: >
+      Requires strong authentication for digital banking channels. Drives
+      MFA as mandatory, not optional, for commercial clients.
+  - name: "NIST SP 800-63 (Digital Identity)"
+    impact: >
+      Defines authentication assurance levels. Drives choice of MFA
+      method based on risk tier (FIDO2 for high-assurance, TOTP for
+      medium, SMS as fallback only)."
+  - name: "PCI DSS (where payments are handled)"
+    impact: >
+      Requires strong credential controls for systems processing card data.
+      Drives vault-backed secret management for payment-adjacent credentials.
+
+kpis:
+  - "Time from approval to first successful login"
+  - "Activation completion rate within SLA"
+  - "MFA enrollment rate on first login"
+  - "Number of password resets / MFA resets in first 30 days"
+  - "Credential-related incident count"
+
+common_patterns:
+  - name: "Out-of-Band Activation Code"
+    description: >
+      Issue access credentials over one channel (email) and activation
+      codes over a separate channel (SMS, phone). Compromise of one
+      channel does not yield usable access.
+    when_to_apply: "Always for commercial digital banking."
+    anti_patterns:
+      - "Username and password emailed together"
+      - "Activation codes with multi-day expiration"
+      - "Code delivery channel controlled by the same account being provisioned"
+  - name: "Rotate-on-First-Use"
+    description: >
+      Bootstrap API credentials and initial passwords must rotate on
+      first successful use. Reduces risk window from credential
+      interception.
+    when_to_apply: "Any system with bootstrap-to-production credential flow."
+    anti_patterns:
+      - "Bootstrap credentials usable in production indefinitely"
+      - "Passwords issued with no expiration on activation code"
+  - name: "Per-Integration API Scopes"
+    description: >
+      Each integration (treasury, ACH, wire) gets its own scoped
+      credentials. Compromise of one integration's credentials does
+      not grant access to others.
+    when_to_apply: "Any multi-integration API access."
+    anti_patterns:
+      - "Single master API key used across all integrations"
+      - "Broad scopes granted 'for convenience' that violate least privilege"
+
+anti_patterns:
+  - "Credentials rendered in the welcome email in plain text"
+  - "Shared credentials across multiple users at the client entity"
+  - "MFA opt-out allowed for 'convenience'"
+  - "No audit trail for credential lifecycle events (issue, rotate, revoke)"
+  - "API keys stored in application databases instead of secret managers"

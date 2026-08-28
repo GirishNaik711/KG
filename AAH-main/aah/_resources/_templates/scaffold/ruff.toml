@@ -1,0 +1,46 @@
+# Ruff configuration — AAH scaffold default.
+#
+# Keeps ruff's default rule selection (E, F) and records only the deliberate
+# exceptions that apply across AAH-built projects. Does NOT widen the rule set:
+# adding more families would introduce new findings rather than resolve the
+# standards gate. Extend this file (do not replace it) when a package needs more.
+
+target-version = "py312"
+line-length = 100
+
+exclude = [
+    ".aah",
+    ".claude",
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "node_modules",
+]
+
+[lint]
+ignore = [
+    # FastAPI REQUIRES calls in argument defaults — `db: Session = Depends(get_db)`
+    # and `file: UploadFile = File(...)` are the framework's documented
+    # dependency-injection idiom. B008 cannot distinguish this from an accidental
+    # mutable default.
+    "B008",
+]
+
+[lint.per-file-ignores]
+"tests/**" = [
+    # Test module names are load-bearing: each feature's `## Test Config` names the
+    # exact file and the attested test evidence is bound to that command. Renaming a
+    # test file to satisfy N999 would invalidate every feature's recorded command.
+    "N999",
+    # Functional tests deliberately drive real servers and inspect non-zero exit
+    # codes; an implicit `check` is the correct semantic — forcing check=True would
+    # raise and break the assertions.
+    "PLW1510",
+    # Teardown paths intentionally catch broadly so that cleanup of real subprocesses,
+    # ports and temp databases never masks the actual test failure.
+    "BLE001",
+]
+
+[lint.isort]
+known-first-party = ["src"]

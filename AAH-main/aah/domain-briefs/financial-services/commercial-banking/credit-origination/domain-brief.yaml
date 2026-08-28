@@ -1,0 +1,36 @@
+id: financial-services/commercial-banking/credit-origination
+parent_id: financial-services/commercial-banking
+level: 3
+stub: true
+name: "Credit Origination"
+description: >
+  End-to-end origination of commercial credit facilities — application, underwriting, risk assessment, approval, and documentation.
+
+typical_horizontals:
+  - ai-applications
+  - ai-infra-platforms
+
+keywords:
+  strong:
+    - "credit origination"
+    - "loan underwriting"
+    - "commercial loan origination"
+  moderate:
+    - "credit application"
+    - "underwriting"
+    - "loan approval"
+
+sample_problem_statements: []
+
+# Stub node: regulations, processes, data_entities, glossary, typical_integrations,
+# kpis, and patterns are inherited from the parent chain. Populate fields below
+# to specialize this node.
+
+processes: []
+data_entities: []
+glossary: []
+typical_integrations: []
+regulations: []
+kpis: []
+common_patterns: []
+anti_patterns: []

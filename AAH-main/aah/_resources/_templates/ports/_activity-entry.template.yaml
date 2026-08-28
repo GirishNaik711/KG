@@ -1,0 +1,59 @@
+# =============================================================================
+# AAH PORTS — ACTIVITY ENTRY TEMPLATE
+# Copy ONE block below, fill it in, paste it under `activities:` in
+# aah/_resources/_references/_ports/_registry.yaml.
+# Ref: aah-ports-activations-design.md §6.1, §7.1
+#
+# Registering is step 1 of 3. Also required:
+#   2. The `ref` implementation exists — skill: aah/skills/<ref>/SKILL.md ·
+#      agent: aah/agents/<ref>.md · workflow: a script named <ref> · plugin: a
+#      plugin package (never tool-invoked, always handed back). Until it does,
+#      set impl_status: stub so the executor hands it back instead of invoking.
+#   3. A trigger — for `discuss`, a matching question + option in the
+#      /aah-discuss guidance whose answer carries `activates: [<this id>]`.
+# =============================================================================
+
+# ---- TEMPLATE A — DISCUSS-triggered activity (the common case) --------------
+- id: ACT-<UPPER-KEBAB-ID>          # (required) unique, stable; prefix ACT-
+  ref: <skill-or-agent-or-workflow-name>   # (required) the object to invoke
+  type: skill                       # (required) skill | agent | workflow | plugin
+  impl_status: available            # (optional) available | stub; default available
+  target: <core-node>               # (required) one of spine_order
+  position: before                  # (required) before | within | after
+  anchor: null                      # (required if within) a node_anchors[target]
+                                    #   name; else null
+  order: 10                         # (optional) peer tiebreak; lower = earlier
+  depends_on: []                    # (optional) peer ACT-ids to run after
+  triggered_by:                     # (required) what switches this on
+    type: discuss                   #   discuss | default
+    slug_id: <discuss-question-slug>   # (discuss only) the gating question
+    option: "<answer-value>"        # (discuss only) the answer that fires it
+  consumes: []                      # (optional) inputs it reads, under .aah/
+  produces: []                      # (optional) artifacts it writes; gate-checked
+
+# ---- TEMPLATE B — DEFAULT (always-on) activity, no discuss question ---------
+- id: ACT-<UPPER-KEBAB-ID>
+  ref: <ref-name>
+  type: skill
+  impl_status: available
+  target: <core-node>
+  position: before
+  anchor: null
+  order: 10
+  depends_on: []
+  triggered_by:
+    type: default                   # always fires when `target` node runs
+    # unless: {slug_id: <slug>, option: "<value>"}   # (optional) opt-out guard;
+    #   in schema but NOT evaluated in v1
+  consumes: []
+  produces: []
+
+# =============================================================================
+# VALIDATION CHECKLIST (enforced by ports.executor validate / compile)
+#   [ ] id unique across the catalog
+#   [ ] target is in spine_order; position is before | within | after
+#   [ ] if within: anchor non-null AND listed in node_anchors[target]
+#   [ ] if triggered_by.type == discuss: slug_id + option set
+#   [ ] every depends_on id exists and shares this (target, position) coordinate
+#   [ ] the `ref` implementation exists (else impl_status: stub)
+# =============================================================================

@@ -1,0 +1,32 @@
+id: financial-services/accounting-finance
+parent_id: financial-services
+level: 2
+stub: true
+name: Accounting & Finance
+description: >
+  Corporate accounting, financial reporting, and finance operations including
+  general ledger management, consolidation (FCCS/HFM), intercompany accounting,
+  close processes, and regulatory financial reporting. Covers ERP-to-consolidation
+  data flows across Oracle, SAP ECC, SAP S/4HANA, and Hyperion/FCCS systems.
+
+typical_horizontals:
+  - data-pipelines
+  - data-modernization
+
+keywords:
+  strong:
+    - general ledger
+    - financial consolidation
+    - FCCS
+    - chart of accounts
+    - journal entries
+    - close process
+    - financial reporting
+  moderate:
+    - ERP integration
+    - SAP finance
+    - Oracle GL
+    - intercompany
+    - statutory reporting
+    - US GAAP
+    - IFRS

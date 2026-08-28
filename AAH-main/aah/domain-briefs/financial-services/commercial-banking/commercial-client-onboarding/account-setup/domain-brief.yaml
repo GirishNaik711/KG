@@ -1,0 +1,151 @@
+id: financial-services/commercial-banking/commercial-client-onboarding/account-setup
+parent_id: financial-services/commercial-banking/commercial-client-onboarding
+level: 4
+name: "Account and Product Setup"
+description: >
+  Post-approval account and product provisioning: creating entity and
+  relationship records in CRM, provisioning deposit / loan / treasury
+  products in core banking, linking authorized signatories with authority
+  levels, and configuring transaction limits and entitlements.
+
+typical_horizontals:
+  - ai-applications
+  - ai-infra-platforms
+
+keywords:
+  strong:
+    - "account setup"
+    - "product provisioning"
+    - "core banking"
+    - "account opening"
+  moderate:
+    - "entitlements"
+    - "authority levels"
+    - "deposit account"
+    - "signatory setup"
+
+sample_problem_statements:
+  - "Automate multi-product account setup from approved onboarding case"
+  - "Orchestrate entity and signatory provisioning across CRM and core banking"
+
+processes:
+  - name: "Entity and Relationship Creation"
+    steps:
+      - "Create legal-entity record in CRM with onboarding-case reference"
+      - "Create related-party records (UBOs, control persons, authorized signatories)"
+      - "Link parent/subsidiary relationships where applicable"
+  - name: "Product Provisioning"
+    steps:
+      - "Open deposit account(s) per application (DDA, MMDA, CD)"
+      - "Open loan accounts per approved facilities"
+      - "Provision treasury products (ACH origination, wire origination, lockbox)"
+      - "Assign product-level rates, fees, and limits per approval conditions"
+  - name: "Signatory and Authority Setup"
+    steps:
+      - "Link authorized signatories to each account with authority level (view, initiate, approve)"
+      - "Configure dual-control or multi-signature requirements per policy"
+      - "Capture signature specimens or e-sig credentials"
+  - name: "Entitlement and Limit Configuration"
+    steps:
+      - "Set transaction limits per account (daily, per-transaction)"
+      - "Configure channel entitlements (online, wire, ACH, mobile)"
+      - "Set user-level permissions for digital banking portal"
+  - name: "Provisioning Reconciliation"
+    steps:
+      - "Verify all provisioning transactions committed across systems"
+      - "Handle rollback if any system fails mid-provisioning"
+      - "Reconcile that all approved products were created correctly"
+
+data_entities:
+  - name: "AccountProvisioning"
+    attributes:
+      - "provisioningId"
+      - "caseId"
+      - "accountType"
+      - "productCode"
+      - "coreSystemAccountNumber"
+      - "status (pending, provisioned, failed, rolled-back)"
+      - "provisionedAt"
+      - "rollbackReason"
+  - name: "AuthorizedSignatory"
+    attributes:
+      - "signatoryId"
+      - "personId"
+      - "accountId"
+      - "authorityLevel (view, initiate, approve)"
+      - "singleLimit"
+      - "dailyLimit"
+      - "effectiveFrom"
+      - "effectiveTo"
+  - name: "EntitlementSet"
+    attributes:
+      - "userId"
+      - "accountId"
+      - "channels (array)"
+      - "permissions (array)"
+      - "configuredBy"
+      - "configuredAt"
+
+glossary:
+  - term: "DDA"
+    definition: "Demand Deposit Account — a checking account allowing withdrawals without prior notice."
+  - term: "MMDA"
+    definition: "Money Market Deposit Account — interest-bearing deposit account with limited transaction privileges."
+  - term: "Dual control"
+    definition: "A control requiring two independent persons to complete a sensitive operation."
+  - term: "Entitlement"
+    definition: "A specific permission granted to a user on an account or product (view-balance, initiate-wire, approve-payment)."
+  - term: "Authority level"
+    definition: "The maximum action a signatory can take without further approval (view, initiate, approve)."
+
+typical_integrations:
+  - "Core banking account-creation APIs (Temenos T24, FIS IBS, Finacle, Mambu)"
+  - "CRM entity/relationship APIs (Salesforce Financial Services Cloud)"
+  - "Digital banking platforms (online banking provisioning)"
+  - "Payment platforms (ACH origination, wire rooms)"
+
+regulations:
+  - name: "FFIEC IT Booklet — Account Opening and Authentication"
+    impact: >
+      Requires multi-factor authentication for digital banking enrollment
+      and controls around signatory authority. Drives MFA configuration
+      and authority-level enforcement.
+  - name: "Regulation CC (Funds Availability)"
+    impact: >
+      Governs holds on deposits in new accounts. Drives hold-policy
+      configuration during account setup.
+
+kpis:
+  - "Time from approval to first-transaction-possible"
+  - "Provisioning-failure rate (cases requiring rework)"
+  - "Cross-system reconciliation mismatch rate"
+  - "Signatory setup accuracy (audit-sampled)"
+
+common_patterns:
+  - name: "Saga Pattern for Cross-System Provisioning"
+    description: >
+      Model account setup as a saga with explicit compensation actions.
+      Each system-call is idempotent; failures trigger defined rollback
+      steps on upstream systems.
+    when_to_apply: >
+      Any multi-system provisioning workflow where partial completion
+      creates inconsistent state.
+    anti_patterns:
+      - "Distributed transactions without documented rollback"
+      - "Partial failures left to analysts to clean up"
+      - "Non-idempotent creation APIs retried blindly"
+  - name: "Configuration-Driven Product Provisioning"
+    description: >
+      Product rules (rates, fees, limits, holds) live in a config
+      catalog. Provisioning reads the catalog rather than encoding
+      product logic in orchestration code.
+    when_to_apply: "Any bank with multiple products or frequent pricing changes."
+    anti_patterns:
+      - "Product rules hardcoded in orchestration scripts"
+      - "Rate and fee tables in spreadsheets outside source control"
+
+anti_patterns:
+  - "Case marked complete before provisioning confirmed across all target systems"
+  - "Signatory authority stored only in core banking without CRM reflection"
+  - "Provisioning retries that create duplicate accounts"
+  - "Manual re-entry of data already captured in onboarding case"

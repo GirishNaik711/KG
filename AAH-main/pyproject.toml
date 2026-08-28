@@ -1,0 +1,97 @@
+[project]
+name = "aah"
+version = "5.1.3"
+description = "ascend-agentic-harness — the AAH delivery framework (deterministic scripts, skills, agents, hooks)"
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0",
+    "networkx>=3.0",
+    "liteparse>=2.9.0",
+    "markitdown[all]>=0.1.0",
+    "rich>=13.0",
+    "cloudpickle>=3.0",
+    "openapi-spec-validator>=0.7",
+    # Local path packages (see [tool.uv.sources]). Declared as deps so a single
+    # `uv tool install .` pulls them in; their CLIs are re-exported below.
+    "codemap-scale[embeddings-local]",
+    "cloudless[langgraph,aws,gcp]",
+]
+
+[project.urls]
+# Single source of truth for the harness repo. Change repo/fork = edit this one line.
+Repository = "https://github.com/Deloitte-US-Consulting/ascend-agentic-harness"
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov",
+    "claude-agent-sdk",
+    "pytest-asyncio>=0.23",
+]
+cloud = [
+    # AWS + database drivers imported lazily by aah/core/cloud/handlers/*
+    # and aah/core/gates/validate_{cloud,data}_readiness.py
+    "boto3>=1.40",
+    "psycopg2-binary>=2.9",
+    "pg8000>=1.30",
+    "pymongo>=4.6",
+    "neo4j>=5.15",
+    "bedrock-agentcore>=1.9",
+    "bedrock-agentcore-starter-toolkit>=0.3",
+]
+gcp = [
+    # imported lazily by aah/core/cloud/handlers/gcp.py and the
+    # cloud/data readiness gates
+    "google-auth>=2.25",
+    "google-cloud-storage>=2.18",
+    "google-cloud-run>=0.10",
+    "google-cloud-container>=2.40",
+    "google-cloud-aiplatform[agent-engines]>=1.80",
+    "google-cloud-logging>=3.9",
+    "google-cloud-secret-manager>=2.18",
+    "google-genai>=0.10",
+    "cloud-sql-python-connector[pg8000]>=1.7",
+]
+
+[project.scripts]
+aah = "aah.cli:main"
+# Re-export the path-dependency console scripts through aah's OWN entry points
+# so a bare `uv tool install .` puts them on PATH. `[tool.uv.sources]` alone
+# installs these packages for *import* only — their console scripts are NOT
+# surfaced. This replaces the old `--with-executables-from` flags in AAH-Dependency-Installer.sh.
+codemap = "codemap_scale.cli:main"
+cloudless = "cloudless.cli.main:main"
+
+[tool.uv.sources]
+codemap-scale = { path = "packages/rapids-utilities", editable = true }
+cloudless = { path = "packages/cloudless", editable = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# skills/, agents/, hooks/ and the framework asset dirs live under aah/ and are
+# included as package data (the .md/.yaml files ship in the wheel) so a global,
+# non-editable install can find them — no force-include needed.
+packages = ["aah"]
+artifacts = [
+    "aah/skills/**",
+    "aah/agents/**",
+    "aah/hooks/**",
+    "aah/activity-library/**",
+    "aah/build-playbooks/**",
+    "aah/domain-briefs/**",
+    "aah/_resources/**",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+markers = [
+    "e2e: end-to-end tests using Claude Agent SDK (requires claude CLI)",
+    "slow: tests that take >30 seconds",
+    "docker: tests that require a working Docker/Docker-Compose daemon (opt-in)",
+]

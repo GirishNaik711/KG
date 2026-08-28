@@ -1,0 +1,38 @@
+id: financial-services/retail-banking
+parent_id: financial-services
+level: 2
+stub: true
+name: "Retail Banking"
+description: >
+  Banking products and services for individual consumers: checking/savings accounts, consumer loans, credit cards, mortgages, digital banking channels.
+
+typical_horizontals:
+  - ai-applications
+  - ai-infra-platforms
+
+keywords:
+  strong:
+    - "retail banking"
+    - "consumer banking"
+  moderate:
+    - "personal banking"
+    - "consumer loan"
+    - "credit card"
+    - "mortgage"
+
+sample_problem_statements:
+  - "Consumer onboarding for a community bank"
+  - "Digital account-opening flow"
+
+# Stub node: regulations, processes, data_entities, glossary, typical_integrations,
+# kpis, and patterns are inherited from the parent chain. Populate fields below
+# to specialize this node.
+
+processes: []
+data_entities: []
+glossary: []
+typical_integrations: []
+regulations: []
+kpis: []
+common_patterns: []
+anti_patterns: []

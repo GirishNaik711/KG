@@ -1,0 +1,47 @@
+# module-map.yaml — Template
+# Single source of truth for module segregation, vertical slicing, and execution order.
+# Each module = one stakeholder-demoable vertical slice (DB + API + UI bundled).
+# MOD-000 is always the walking skeleton (non-demoable infra collapses here).
+#
+# Written by: /aah-architecture Stage 2 (Carve Modules)
+# Consumed by: /aah-plan (feature decomposition + wave computation)
+# Path: .aah/architecture/module-map.yaml
+
+modules:
+
+  - id: MOD-000
+    name: {walking-skeleton-name}
+    description: "{1-2 sentence summary of what this module provides}"
+    demo_criteria: "{minimal boot verification — e.g. App boots, health endpoint responds}"
+    smoke_test: "{command to verify — e.g. curl http://localhost:3000/health}"
+    layers: {}      # expandable key-value map — add layers relevant to the use case
+    #               # examples by project type:
+    #               #   web app:   { db: [...], api: [...], ui/ux: [...] }
+    #               #   agentic:   { agent: [...], tools: [...], memory: [...], api: [...] }
+    #               #   data:      { ingestion: [...], transform: [...], storage: [...] }
+    #               #   platform:  { infra: [...], services: [...], gateway: [...] }
+    depends_on: []
+    cloud_services: []  # service `id`s from cloud-readiness.yaml this module integrates
+    #                   # against (e.g. [svc-001]) — only if /aah-access ran. Empty if none.
+
+  - id: MOD-001
+    name: {module-name}
+    description: "{1-2 sentence summary of what this module provides}"
+    demo_criteria: "{What a stakeholder sees when this module is complete}"
+    smoke_test: "{Executable command or sequence to verify demo_criteria}"
+    layers: {}      # populate with layers appropriate to this module's use case
+    depends_on: []  # e.g. [MOD-000] or [MOD-000, MOD-001]
+    cloud_services: []  # service `id`s from cloud-readiness.yaml this module integrates
+    #                   # against (e.g. [svc-001]) — only if /aah-access ran. Empty if none.
+
+# Repeat MOD-002..N as needed.
+#
+# ── RULES ──
+# - A module is a DISTINCT FLOW that is demoable end-to-end.
+# - If you cannot demo it to a stakeholder, it belongs in MOD-000.
+# - On multi-flow solutions: each distinct flow = one module.
+# - On single-flow builds: modules are thin (possibly just MOD-000 + MOD-001).
+# - depends_on defines inter-module execution order (topological sort → waves).
+# - layers drive intra-wave feature ordering (e.g. DB → API → UI, or infra → services → gateway).
+# - cloud_services references already-provisioned resources validated by /aah-access — it
+#   records which real service a module talks to, never a resource AAH will create.

@@ -1,0 +1,35 @@
+---
+name: rapids-usage
+description: Show cumulative token usage and recent activity log for the active project
+user-invocable: true
+disable-model-invocation: true
+---
+
+# RAPIDS Usage & Activity Report
+
+## Steps
+
+### 1. Token Usage Report
+
+```bash
+aah run core.logging.activity_logger usage
+```
+
+Present the cumulative token usage:
+- Total input tokens
+- Total output tokens
+- Total all tokens
+- Number of sessions
+- Average tokens per session
+- Last 5 session breakdowns
+
+### 2. Recent Activity Log
+
+```bash
+aah run core.logging.activity_logger activity
+```
+
+Present the recent meaningful actions across sessions:
+- Tool calls (writes, edits, script runs, agent dispatches)
+- Grouped by session with timestamps
+- Skip noise (reads, globs, greps)

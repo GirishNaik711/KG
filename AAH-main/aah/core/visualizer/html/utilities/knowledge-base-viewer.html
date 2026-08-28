@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAPIDS Knowledge Base — 3-Layer System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="../rapids-loader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+    window.mermaid = mermaid;
+  </script>
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --surface: #ffffff;
+      --surface-soft: #f7f9fc;
+      --ink: #111827;
+      --muted: #64748b;
+      --subtle: #94a3b8;
+      --line: #d8e0ea;
+      --brand: #155e75;
+      --brand-strong: #0f3f52;
+      --accent: #c2410c;
+      --good: #0f766e;
+      --warn: #b45309;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 14px 40px rgba(15, 23, 42, 0.12);
+      --radius: 8px;
+      --radius-lg: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Manrope, system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(216, 224, 234, 0.55) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(216, 224, 234, 0.55) 1px, transparent 1px),
+        var(--bg);
+      background-size: 36px 36px;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow-md);
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: var(--brand);
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--muted);
+    }
+
+    .layers-grid {
+      display: grid;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .layer-card {
+      background: var(--surface);
+      border: 2px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .layer-card.layer-1 { border-color: #3b82f6; }
+    .layer-card.layer-2 { border-color: #f59e0b; }
+    .layer-card.layer-3 { border-color: #10b981; }
+
+    .layer-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .layer-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+    }
+
+    .layer-icon.layer-1 { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .layer-icon.layer-2 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .layer-icon.layer-3 { background: linear-gradient(135deg, #10b981, #059669); }
+
+    .layer-header h2 {
+      font-size: 1.5rem;
+      font-weight: 750;
+    }
+
+    .layer-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-left: auto;
+    }
+
+    .layer-description {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .knowledge-content {
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .knowledge-content pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: var(--radius);
+      overflow-x: auto;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.85rem;
+      margin: 12px 0;
+    }
+
+    .knowledge-content code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.85rem;
+      color: #dc2626;
+    }
+
+    .knowledge-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+    }
+
+    .knowledge-content h1 {
+      color: var(--brand);
+      font-size: 1.5rem;
+      margin: 24px 0 16px;
+      font-weight: 800;
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 8px;
+    }
+
+    .knowledge-content h2 {
+      color: var(--brand);
+      font-size: 1.3rem;
+      margin: 20px 0 12px;
+      font-weight: 750;
+    }
+
+    .knowledge-content h3 {
+      color: var(--brand);
+      font-size: 1.1rem;
+      margin: 16px 0 10px;
+      font-weight: 700;
+    }
+
+    .knowledge-content p {
+      margin: 12px 0;
+      line-height: 1.6;
+    }
+
+    .knowledge-content ul,
+    .knowledge-content ol {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+
+    .knowledge-content li {
+      margin: 6px 0;
+      line-height: 1.5;
+    }
+
+    .knowledge-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      background: white;
+      box-shadow: var(--shadow-sm);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .knowledge-content thead {
+      background: var(--brand);
+      color: white;
+    }
+
+    .knowledge-content th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 700;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .knowledge-content td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .knowledge-content tbody tr:hover {
+      background: var(--surface-soft);
+    }
+
+    .knowledge-content blockquote {
+      border-left: 4px solid var(--brand);
+      padding: 12px 16px;
+      margin: 16px 0;
+      background: var(--surface-soft);
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .knowledge-content hr {
+      border: none;
+      border-top: 2px solid var(--line);
+      margin: 24px 0;
+    }
+
+    .knowledge-content a {
+      color: var(--brand);
+      text-decoration: underline;
+    }
+
+    .knowledge-content a:hover {
+      color: var(--brand-strong);
+    }
+
+    .knowledge-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: var(--radius);
+      margin: 16px 0;
+    }
+
+    .learning-item {
+      background: white;
+      border-left: 3px solid var(--brand);
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin: 12px 0;
+    }
+
+    .learning-item strong {
+      color: var(--brand);
+      font-weight: 650;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--subtle);
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--brand);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="../index.html" class="back-link">← Back to Dashboard</a>
+
+    <header>
+      <h1>🗄️ RAPIDS Knowledge Base</h1>
+      <p class="subtitle">3-Layer Knowledge System — From Static Documentation to Dynamic Learnings</p>
+    </header>
+
+    <div class="layers-grid">
+      <!-- Layer 1: Static Knowledge -->
+      <div class="layer-card layer-1">
+        <div class="layer-header">
+          <div class="layer-icon layer-1">📚</div>
+          <h2>Layer 1: Static Knowledge</h2>
+          <span class="layer-badge">Curated</span>
+        </div>
+        <p class="layer-description">
+          <strong>Purpose:</strong> Human-authored domain knowledge and project context stored in <code>knowledge/</code> directory.
+          These files are manually curated and version-controlled.
+        </p>
+        <div id="layer1Content" class="knowledge-content loading">
+          <div class="empty-state">
+            <div class="empty-state-icon">📄</div>
+            <p>Loading static knowledge files...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Layer 2: Subagent Learnings -->
+      <div class="layer-card layer-2">
+        <div class="layer-header">
+          <div class="layer-icon layer-2">🤖</div>
+          <h2>Layer 2: Subagent Learnings</h2>
+          <span class="layer-badge">Dynamic</span>
+        </div>
+        <p class="layer-description">
+          <strong>Purpose:</strong> Patterns and insights discovered during feature implementation.
+          Captured by feature-implementer subagents and stored in <code>.rapids/implement/subagent-learnings.json</code>.
+        </p>
+        <div id="layer2Content" class="knowledge-content loading">
+          <div class="empty-state">
+            <div class="empty-state-icon">⚙️</div>
+            <p>Loading subagent learnings...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Layer 3: Core RAPIDS Capabilities -->
+      <div class="layer-card layer-3">
+        <div class="layer-header">
+          <div class="layer-icon layer-3">⚡</div>
+          <h2>Layer 3: Core RAPIDS Framework</h2>
+          <span class="layer-badge">Built-In</span>
+        </div>
+        <p class="layer-description">
+          <strong>Purpose:</strong> RAPIDS framework capabilities embedded in the orchestrator, phase scripts, and activity library.
+          This layer includes: DAG computation, wave orchestration, NO MOCKS testing, checkpoint validation, and brownfield intelligence.
+        </p>
+        <div id="layer3Content" class="knowledge-content">
+          <div class="learning-item">
+            <strong>1. Deterministic Orchestrator</strong> — Python scripts compute next action from state files
+          </div>
+          <div class="learning-item">
+            <strong>2. NO MOCKS Testing</strong> — Guards block mock frameworks, enforce functional testing
+          </div>
+          <div class="learning-item">
+            <strong>3. DAG + Wave Execution</strong> — Feature dependency graph with topological sort
+          </div>
+          <div class="learning-item">
+            <strong>4. Checkpoint & Feedback</strong> — System validation after each wave
+          </div>
+          <div class="learning-item">
+            <strong>5. Worktree Isolation</strong> — Parallel feature development in isolated git worktrees
+          </div>
+          <div class="learning-item">
+            <strong>6. End-to-End Traceability</strong> — Problem → Research → ADR → Spec → Code → Test
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const rapidsLoader = new RAPIDSLoader('../rapids-config.json');
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    let mermaidCounter = 0;
+    const mermaidCodeStore = new Map(); // Store mermaid code separately
+
+    async function parseMarkdownWithMermaid(markdown) {
+      if (typeof marked === 'undefined') {
+        return escapeHtml(markdown);
+      }
+
+      // Configure marked.js
+      marked.setOptions({
+        breaks: true,
+        gfm: true,
+        headerIds: true,
+        mangle: false
+      });
+
+      // Custom renderer for code blocks to handle mermaid
+      const renderer = new marked.Renderer();
+      const originalCodeRenderer = renderer.code.bind(renderer);
+
+      renderer.code = function(code, language) {
+        if (language === 'mermaid') {
+          // Generate unique ID for this mermaid diagram
+          const diagramId = `mermaid-inline-${mermaidCounter++}`;
+          // Store the code in our Map (not in HTML to avoid escaping issues)
+          mermaidCodeStore.set(diagramId, code);
+          // Return a placeholder div
+          return `<div class="mermaid-inline" data-mermaid-id="${diagramId}" style="background: white; border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; margin: 20px 0; overflow-x: auto; min-height: 200px; display: flex; align-items: center; justify-content: center; color: var(--muted);">Rendering diagram...</div>`;
+        }
+        // For other code blocks, use default rendering
+        return originalCodeRenderer(code, language);
+      };
+
+      // Parse markdown with custom renderer
+      const html = marked.parse(markdown, { renderer });
+
+      return html;
+    }
+
+    async function renderInlineMermaidDiagrams(container) {
+      // Wait for mermaid if needed
+      if (typeof mermaid === 'undefined') {
+        console.warn('[Mermaid] Library not loaded, skipping inline diagrams');
+        return;
+      }
+
+      // Find all mermaid placeholders
+      const mermaidDivs = container.querySelectorAll('.mermaid-inline');
+      console.log('[Mermaid] Found', mermaidDivs.length, 'inline diagrams to render');
+
+      for (const div of mermaidDivs) {
+        const diagramId = div.getAttribute('data-mermaid-id');
+        const mermaidCode = mermaidCodeStore.get(diagramId);
+
+        if (!mermaidCode) {
+          console.error('[Mermaid] No code found for diagram:', diagramId);
+          div.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Diagram code not found</p></div>`;
+          continue;
+        }
+
+        try {
+          console.log('[Mermaid] Rendering diagram:', diagramId);
+          const { svg } = await mermaid.render(diagramId, mermaidCode);
+          div.innerHTML = svg;
+          div.style.minHeight = 'auto';
+        } catch (err) {
+          console.error('[Mermaid] Failed to render inline diagram:', diagramId, err);
+          div.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Failed to render diagram: ${err.message}</p></div>`;
+        }
+      }
+    }
+
+    function parseMarkdown(markdown) {
+      // Simple synchronous version for compatibility
+      if (typeof marked !== 'undefined') {
+        marked.setOptions({
+          breaks: true,
+          gfm: true,
+          headerIds: true,
+          mangle: false
+        });
+        return marked.parse(markdown);
+      }
+      return escapeHtml(markdown);
+    }
+
+    async function loadKnowledgeBase() {
+      const layer1Content = document.getElementById('layer1Content');
+      const layer2Content = document.getElementById('layer2Content');
+
+      try {
+        await rapidsLoader.init();
+
+        if (!rapidsLoader.isConfigured()) {
+          layer1Content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Config not found</p></div>';
+          layer2Content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Config not found</p></div>';
+          return;
+        }
+
+        // Load Layer 1: Static Knowledge (project brief)
+        try {
+          const projectBrief = await rapidsLoader.loadProjectBrief();
+          const briefHTML = await parseMarkdownWithMermaid(projectBrief);
+          layer1Content.innerHTML = `<div>${briefHTML}</div>`;
+
+          // Render any inline mermaid diagrams
+          await renderInlineMermaidDiagrams(layer1Content);
+
+          layer1Content.classList.remove('loading');
+        } catch (err) {
+          console.error('[Knowledge Base] Failed to load project brief:', err);
+          layer1Content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><p>No project brief found</p></div>';
+          layer1Content.classList.remove('loading');
+        }
+
+        // Load Layer 2: Subagent Learnings
+        try {
+          const learningsData = await rapidsLoader.loadSubagentLearnings();
+
+          if (learningsData && learningsData.entries && learningsData.entries.length > 0) {
+            // Filter out empty entries (where patterns, decisions, conventions are all empty)
+            const validEntries = learningsData.entries.filter(entry =>
+              (entry.patterns && entry.patterns.length > 0) ||
+              (entry.decisions && entry.decisions.length > 0) ||
+              (entry.conventions && entry.conventions.length > 0)
+            );
+
+            if (validEntries.length > 0) {
+              const learningsHTML = validEntries.map(entry => {
+                let content = '';
+
+                if (entry.agent_name) {
+                  content += `<div style="font-weight: 700; color: var(--brand); margin-bottom: 8px;">${escapeHtml(entry.agent_name)}</div>`;
+                }
+
+                if (entry.patterns && entry.patterns.length > 0) {
+                  content += '<div style="margin-bottom: 12px;"><strong>Patterns Observed:</strong><ul style="margin: 4px 0; padding-left: 20px;">';
+                  entry.patterns.forEach(pattern => {
+                    content += `<li style="margin: 4px 0;">${escapeHtml(pattern)}</li>`;
+                  });
+                  content += '</ul></div>';
+                }
+
+                if (entry.decisions && entry.decisions.length > 0) {
+                  content += '<div style="margin-bottom: 12px;"><strong>Decisions Made:</strong><ul style="margin: 4px 0; padding-left: 20px;">';
+                  entry.decisions.forEach(decision => {
+                    content += `<li style="margin: 4px 0;">${escapeHtml(decision)}</li>`;
+                  });
+                  content += '</ul></div>';
+                }
+
+                if (entry.conventions && entry.conventions.length > 0) {
+                  content += '<div style="margin-bottom: 8px;"><strong>Conventions Applied:</strong><ul style="margin: 4px 0; padding-left: 20px;">';
+                  entry.conventions.forEach(convention => {
+                    content += `<li style="margin: 4px 0;">${escapeHtml(convention)}</li>`;
+                  });
+                  content += '</ul></div>';
+                }
+
+                return `<div class="learning-item">${content}</div>`;
+              }).join('');
+
+              layer2Content.innerHTML = `
+                <p style="margin-bottom: 16px; font-weight: 600;">
+                  ${validEntries.length} learning entries captured from ${learningsData.entries.length} total features
+                </p>
+                ${learningsHTML}
+              `;
+            } else {
+              layer2Content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>No learnings with content captured yet</p></div>';
+            }
+          } else {
+            layer2Content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>No learnings captured yet</p></div>';
+          }
+          layer2Content.classList.remove('loading');
+        } catch (err) {
+          console.error('[Knowledge Base] Failed to load subagent learnings:', err);
+          layer2Content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚙️</div><p>Subagent learnings file not found</p></div>';
+          layer2Content.classList.remove('loading');
+        }
+
+      } catch (err) {
+        console.error('[Knowledge Base] Load error:', err);
+        layer1Content.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Failed to load: ${err.message}</p></div>`;
+        layer2Content.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Failed to load: ${err.message}</p></div>`;
+        layer1Content.classList.remove('loading');
+        layer2Content.classList.remove('loading');
+      }
+    }
+
+    loadKnowledgeBase();
+  </script>
+</body>
+</html>

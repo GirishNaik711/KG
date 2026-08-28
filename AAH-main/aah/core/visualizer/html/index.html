@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAPIDS Features — Enterprise AI Delivery Framework</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="./rapids-loader.js"></script>
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --surface: #ffffff;
+      --surface-soft: #f7f9fc;
+      --ink: #111827;
+      --muted: #64748b;
+      --subtle: #94a3b8;
+      --line: #d8e0ea;
+      --brand: #155e75;
+      --brand-strong: #0f3f52;
+      --accent: #c2410c;
+      --good: #0f766e;
+      --warn: #b45309;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 14px 40px rgba(15, 23, 42, 0.12);
+      --radius: 8px;
+      --radius-lg: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Manrope, system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(216, 224, 234, 0.55) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(216, 224, 234, 0.55) 1px, transparent 1px),
+        var(--bg);
+      background-size: 36px 36px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .logo-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--brand), var(--good));
+      box-shadow: 0 20px 50px rgba(21, 94, 117, 0.3);
+      color: white;
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      margin-bottom: 16px;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .tagline {
+      font-size: 1.25rem;
+      color: var(--muted);
+      max-width: 700px;
+      margin: 0 auto 32px;
+    }
+
+    .badges {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 650;
+      color: var(--muted);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .badge-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+
+    .badge-icon.deterministic { background: linear-gradient(135deg, #10b981, #059669); }
+    .badge-icon.tested { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .badge-icon.parallel { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+    .badge-icon.traceable { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+    .section {
+      margin-bottom: 80px;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .section-header h2 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .section-header p {
+      color: var(--muted);
+      font-size: 1.1rem;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-md);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
+      border-color: var(--brand);
+    }
+
+    .feature-card .utility-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: var(--brand);
+      color: white;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 650;
+      text-decoration: none;
+      transition: background 0.2s ease;
+    }
+
+    .feature-card .utility-link:hover {
+      background: var(--brand-strong);
+    }
+
+    .feature-card .utility-link.coming-soon {
+      background: var(--subtle);
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: white;
+    }
+
+    .feature-icon.orchestrator { background: linear-gradient(135deg, #155e75, #0f766e); }
+    .feature-icon.no-mocks { background: linear-gradient(135deg, #dc2626, #991b1b); }
+    .feature-icon.dag { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+    .feature-icon.feedback { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .feature-icon.worktree { background: linear-gradient(135deg, #059669, #047857); }
+    .feature-icon.traceability { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+
+    .feature-card h3 {
+      font-size: 1.35rem;
+      font-weight: 750;
+      margin-bottom: 12px;
+    }
+
+    .feature-card .what {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .feature-card .impact {
+      background: var(--surface-soft);
+      border-left: 3px solid var(--brand);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
+
+    .feature-card .impact strong {
+      display: block;
+      color: var(--brand);
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .feature-card .value {
+      display: flex;
+      align-items: start;
+      gap: 10px;
+      padding: 10px;
+      background: #f0fdfa;
+      border: 1px solid #99f6e4;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      color: #115e59;
+    }
+
+    .feature-card .value::before {
+      content: "✓";
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: #0f766e;
+    }
+
+    .utilities-section {
+      background: var(--surface);
+      border: 2px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .utilities-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 32px;
+    }
+
+    .utility-card {
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease;
+      display: block;
+    }
+
+    .utility-card:hover {
+      border-color: var(--brand);
+      background: white;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .utility-card h4 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--brand);
+    }
+
+    .utility-card p {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .utility-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: var(--brand);
+      color: white;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 10px;
+    }
+
+    .utility-badge.coming-soon {
+      background: var(--subtle);
+    }
+
+    .cta-section {
+      text-align: center;
+      padding: 60px 24px;
+      background: linear-gradient(135deg, rgba(21, 94, 117, 0.05), rgba(15, 118, 110, 0.05));
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(21, 94, 117, 0.15);
+    }
+
+    .cta-section h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .cta-section p {
+      color: var(--muted);
+      font-size: 1.1rem;
+      margin-bottom: 28px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: var(--radius);
+      font-weight: 700;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--brand), var(--good));
+      color: white;
+      box-shadow: 0 10px 30px rgba(21, 94, 117, 0.25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 40px rgba(21, 94, 117, 0.35);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--brand);
+      border-color: var(--line);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--brand);
+      background: white;
+    }
+
+    .code-snippet {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 16px 20px;
+      border-radius: var(--radius);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.85rem;
+      margin: 16px 0;
+      overflow-x: auto;
+      border: 1px solid #334155;
+    }
+
+    .code-snippet .comment {
+      color: #64748b;
+    }
+
+    .code-snippet .command {
+      color: #38bdf8;
+    }
+
+    .project-overview {
+      background: linear-gradient(135deg, rgba(21, 94, 117, 0.08), rgba(15, 118, 110, 0.05));
+      border: 2px solid rgba(21, 94, 117, 0.2);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin-bottom: 60px;
+    }
+
+    .project-overview.loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .project-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .project-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--brand);
+    }
+
+    .phase-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--good);
+      color: white;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .info-card h4 {
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .info-card .content {
+      color: var(--ink);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .info-card .content strong {
+      color: var(--brand);
+      font-weight: 650;
+    }
+
+    .info-card .content code {
+      background: var(--surface-soft);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.85rem;
+    }
+
+    .info-card ul {
+      margin: 8px 0;
+      padding-left: 20px;
+    }
+
+    .info-card li {
+      margin: 4px 0;
+    }
+
+    .activity-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .activity-item {
+      background: var(--surface-soft);
+      border-left: 3px solid var(--brand);
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 0.88rem;
+    }
+
+    .activity-item .timestamp {
+      color: var(--subtle);
+      font-size: 0.75rem;
+      margin-bottom: 4px;
+    }
+
+    .activity-item .summary {
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .phase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .phase-item {
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .phase-item.active {
+      background: #ecfeff;
+      border-color: var(--brand);
+    }
+
+    .phase-item.active .phase-name {
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    .phase-item .phase-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: capitalize;
+      margin-bottom: 4px;
+    }
+
+    .phase-item .phase-depth {
+      font-size: 0.7rem;
+      color: var(--subtle);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--subtle);
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    .intake-rounds {
+      display: grid;
+      gap: 24px;
+    }
+
+    .intake-round {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .intake-round-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .intake-round-header h4 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--brand);
+      text-transform: capitalize;
+      margin: 0;
+    }
+
+    .intake-round-header .timestamp {
+      font-size: 0.75rem;
+      color: var(--subtle);
+      margin-left: auto;
+    }
+
+    .intake-questions {
+      display: grid;
+      gap: 16px;
+    }
+
+    .intake-question {
+      background: var(--surface-soft);
+      border-left: 3px solid var(--brand);
+      padding: 14px 16px;
+      border-radius: 4px;
+    }
+
+    .intake-question .q {
+      font-weight: 650;
+      font-size: 0.9rem;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .intake-question .a {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .intake-question .a code {
+      background: white;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.85rem;
+    }
+
+    .intake-question .a ul {
+      margin: 6px 0;
+      padding-left: 20px;
+    }
+
+    .intake-question .inferred-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #fef3c7;
+      color: #92400e;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-left: 8px;
+    }
+
+    .project-brief-content {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--ink);
+    }
+
+    .project-brief-content h1,
+    .project-brief-content h2,
+    .project-brief-content h3 {
+      margin-top: 20px;
+      margin-bottom: 12px;
+      color: var(--brand);
+    }
+
+    .project-brief-content ul,
+    .project-brief-content ol {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+
+    .project-brief-content li {
+      margin: 6px 0;
+    }
+
+    .project-brief-content strong {
+      color: var(--brand);
+      font-weight: 650;
+    }
+
+    .project-brief-content hr {
+      border: none;
+      border-top: 1px solid var(--line);
+      margin: 24px 0;
+    }
+
+    .iteration-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, var(--brand), var(--good));
+      color: white;
+      border-radius: 999px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(21, 94, 117, 0.3);
+    }
+
+    .iteration-badge.in-progress {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .iteration-badge.completed {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    .iteration-timeline {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .iteration-item {
+      flex: 1;
+      min-width: 120px;
+      background: var(--surface-soft);
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      position: relative;
+    }
+
+    .iteration-item.completed {
+      background: #ecfdf5;
+      border-color: var(--good);
+    }
+
+    .iteration-item.in-progress {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    }
+
+    .iteration-item .iter-number {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--brand);
+      margin-bottom: 4px;
+    }
+
+    .iteration-item.completed .iter-number {
+      color: var(--good);
+    }
+
+    .iteration-item.in-progress .iter-number {
+      color: #d97706;
+    }
+
+    .iteration-item .iter-status {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--subtle);
+    }
+
+    .iteration-item.completed .iter-status {
+      color: var(--good);
+    }
+
+    .iteration-item.in-progress .iter-status {
+      color: #b45309;
+    }
+
+    .iteration-item .iter-date {
+      font-size: 0.7rem;
+      color: var(--subtle);
+      margin-top: 4px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--subtle);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      .features-grid,
+      .utilities-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cta-buttons {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-mark">R</div>
+      <h1 id="headerTitle">RAPIDS Project Dashboard</h1>
+      <p class="tagline" id="headerTagline">
+        Loading project information...
+      </p>
+      <div class="badges">
+        <span class="badge"><span class="badge-icon deterministic"></span> Built with RAPIDS</span>
+        <span class="badge" id="phaseBadgeHeader"><span class="badge-icon tested"></span> Phase: <span id="phaseNameHeader">-</span></span>
+        <span class="badge" id="waveBadgeHeader"><span class="badge-icon parallel"></span> Wave: <span id="waveNumberHeader">-</span></span>
+        <span class="badge" id="complexityBadgeHeader"><span class="badge-icon traceable"></span> Tier: <span id="complexityHeader">-</span></span>
+      </div>
+    </header>
+
+    <!-- Iteration Info Section -->
+    <section class="project-overview" id="iterationInfo" style="display: none;">
+      <div class="project-header">
+        <h2 class="project-title">🔄 Iteration Information</h2>
+      </div>
+
+      <div class="info-grid">
+        <!-- Current Iteration -->
+        <div class="info-card">
+          <h4>Current Iteration</h4>
+          <div class="content" id="currentIteration">
+            <div class="empty-state">
+              <div class="empty-state-icon">🔄</div>
+              <p>Loading iteration data...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scenario Info -->
+        <div class="info-card">
+          <h4>Scenario & Scope</h4>
+          <div class="content" id="scenarioInfo">
+            <div class="empty-state">
+              <div class="empty-state-icon">📋</div>
+              <p>Loading scenario...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Iteration History -->
+        <div class="info-card">
+          <h4>Iteration Timeline</h4>
+          <div class="content" id="iterationTimeline">
+            <div class="empty-state">
+              <div class="empty-state-icon">📅</div>
+              <p>Loading history...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Full-Width Intake Section -->
+    <section class="project-overview loading" id="intakeSection" style="display: none;">
+      <div class="project-header">
+        <h2 class="project-title">📋 Project Intake — What We're Building</h2>
+      </div>
+
+      <!-- Project Brief -->
+      <div class="info-card" style="margin-bottom: 24px;">
+        <h4>Original Problem Statement</h4>
+        <div class="content" id="projectBrief">
+          <div class="empty-state">
+            <div class="empty-state-icon">📄</div>
+            <p>No project brief available</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Intake Questions Grid -->
+      <div id="intakeQuestionsContainer">
+        <!-- Will be populated by JavaScript -->
+      </div>
+    </section>
+
+    <!-- Project Configuration & Activity -->
+    <section class="project-overview loading" id="projectContext" style="display: none;">
+      <div class="project-header">
+        <h2 class="project-title">⚙️ Project Configuration & Activity</h2>
+      </div>
+
+      <div class="info-grid">
+        <!-- Project Metadata -->
+        <div class="info-card">
+          <h4>Technical Configuration</h4>
+          <div class="content" id="projectMetadata">
+            <div class="empty-state">
+              <div class="empty-state-icon">⚙️</div>
+              <p>No manifest available</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Summary -->
+        <div class="info-card">
+          <h4>Implementation Progress</h4>
+          <div class="content" id="progressSummary">
+            <div class="empty-state">
+              <div class="empty-state-icon">📊</div>
+              <p>No progress data</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="info-card">
+          <h4>⏱️ Recent Activity</h4>
+          <div class="content" id="recentActivity">
+            <div class="empty-state">
+              <div class="empty-state-icon">📝</div>
+              <p>No activity recorded</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RAPIDS Phase Execution Plan -->
+    <section class="section" id="phasePlanSection" style="display: none;">
+      <div class="section-header">
+        <h2>🗺️ RAPIDS Phase Execution Plan</h2>
+        <p>How this project is being built through the 6 RAPIDS phases</p>
+      </div>
+      <div class="features-grid" id="phasePlanGrid">
+        <!-- Will be populated by JavaScript -->
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>⚙️ Core RAPIDS Capabilities</h2>
+        <p>The foundation of deterministic AI-powered delivery — Click to explore interactive viewers</p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Capability 1: DAG + Wave Execution -->
+        <div class="feature-card">
+          <div class="feature-icon dag">📊</div>
+          <h3>1. DAG + Wave Execution</h3>
+          <p class="what">
+            <strong>How it works:</strong> Features modeled as directed acyclic graph in <code>dag.json</code>.
+            Topological sort creates parallel execution waves with automatic dependency resolution.
+            Cytoscape.js renders interactive visualization with zoom, pan, and node search.
+          </p>
+          <div class="impact">
+            <strong>In This Project</strong>
+            <span id="dagStats">Features organized into waves based on dependencies.
+            Parallel execution in isolated git worktrees. Blast radius computed for impact analysis.</span>
+          </div>
+          <div class="value">
+            ✓ Zero dependency conflicts. Automatic critical path identification. Parallel feature development.
+          </div>
+          <a href="./utilities/dag-viewer.html" class="utility-link">📊 View DAG & Waves →</a>
+        </div>
+
+        <!-- Capability 2: 3-Layer Knowledge Base -->
+        <div class="feature-card">
+          <div class="feature-icon worktree">🗄️</div>
+          <h3>2. 3-Layer Knowledge System</h3>
+          <p class="what">
+            <strong>How it works:</strong> Three knowledge layers — <strong>Layer 1:</strong> Static knowledge files in <code>knowledge/</code>,
+            <strong>Layer 2:</strong> Dynamic subagent learnings in <code>subagent-learnings.json</code> (patterns, decisions, conventions),
+            <strong>Layer 3:</strong> Built-in RAPIDS framework capabilities and best practices.
+          </p>
+          <div class="impact">
+            <strong>In This Project</strong>
+            Layer 1: Project brief and domain knowledge. Layer 2: Patterns and decisions learned during implementation.
+            Layer 3: Core RAPIDS capabilities like DAG execution, checkpoints, NO MOCKS testing.
+          </div>
+          <div class="value">
+            ✓ Context accumulates across features. Learnings persist and compound. Knowledge compounds with each iteration.
+          </div>
+          <a href="./utilities/knowledge-base-viewer.html" class="utility-link">🗄️ View Knowledge Base →</a>
+        </div>
+
+        <!-- Capability 3: Brownfield Intelligence / Greenfield Project -->
+        <div class="feature-card" id="projectTypeCard">
+          <!-- Content will be dynamically replaced based on project type -->
+        </div>
+
+        <!-- Capability 4: Deterministic Orchestrator -->
+        <div class="feature-card" style="opacity: 0.7;">
+          <div class="feature-icon orchestrator">⚙️</div>
+          <h3>4. Deterministic Orchestrator</h3>
+          <p class="what">
+            <strong>How it works:</strong> Python state machine in <code>orchestrator.py</code> computes exact next action
+            from state files (manifest.yaml, progress.json, waves.json). Implements finite state machine with
+            strict transitions: run features → run QA → system checkpoint → user review → merge → next wave.
+          </p>
+          <div class="impact">
+            <strong>In This Project</strong>
+            Every implement phase action determined by orchestrator. No workflow hallucinations or missed steps.
+            Full audit trail in iteration-history.yaml.
+          </div>
+          <div class="value">
+            ✓ Zero workflow hallucinations. Predictable execution flow. Every step logged and auditable.
+          </div>
+          <span class="utility-link coming-soon">Coming Soon</span>
+        </div>
+
+        <!-- Capability 5: NO MOCKS Testing -->
+        <div class="feature-card" style="opacity: 0.7;">
+          <div class="feature-icon no-mocks">🚫</div>
+          <h3>5. NO MOCKS Testing Philosophy</h3>
+          <p class="what">
+            <strong>How it works:</strong> Pre-commit hooks scan test files and block mock frameworks
+            (jest.mock, unittest.mock, sinon, pytest-mock). All tests must be functional — executing against
+            real running systems. Docker containers provide isolated test environments.
+          </p>
+          <div class="impact">
+            <strong>In This Project</strong>
+            Test suite runs against real services. Mock frameworks blocked at commit time.
+            Production parity guaranteed. Runtime validation proves the app actually works.
+          </div>
+          <div class="value">
+            ✓ No mock/prod divergence. Real integration coverage. Fewer production surprises.
+          </div>
+          <span class="utility-link coming-soon">Coming Soon</span>
+        </div>
+
+        <!-- Capability 6: Checkpoint & Feedback System -->
+        <div class="feature-card" style="opacity: 0.7;">
+          <div class="feature-icon feedback">🔄</div>
+          <h3>6. Checkpoint & Feedback System</h3>
+          <p class="what">
+            <strong>How it works:</strong> System checkpoints run after each wave: functional tests, runtime validation
+            (Docker build + container execution), and regression suite. Failures captured with blast radius analysis.
+            User review checkpoint presents results. Feedback items routed to root cause phase (spec → plan, logic → implement).
+          </p>
+          <div class="impact">
+            <strong>In This Project</strong>
+            Checkpoint results stored in <code>.rapids/implement/checkpoint-results/</code>.
+            Feedback captured in JSON with classification, severity, and blast radius. Rework cycles target root cause.
+          </div>
+          <div class="value">
+            ✓ Quality gates enforced. Failures auto-classified. Root cause fixes, not band-aids.
+          </div>
+          <span class="utility-link coming-soon">Coming Soon</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="utilities-section">
+        <div class="section-header" style="margin-bottom: 0;">
+          <h2>Interactive Utilities</h2>
+          <p>Explore your RAPIDS project with visual tools</p>
+        </div>
+
+        <div class="utilities-grid">
+          <a href="./utilities/dag-viewer.html" class="utility-card">
+            <h4>📊 DAG Review Studio</h4>
+            <p>
+              Interactive dependency graph visualization. View execution waves, find critical paths,
+              analyze blast radius, and review feature dependencies.
+            </p>
+            <span class="utility-badge">Available</span>
+          </a>
+
+          <a href="./utilities/knowledge-base-viewer.html" class="utility-card">
+            <h4>🗄️ Knowledge Base Viewer</h4>
+            <p>
+              Explore the 3-layer knowledge system: static project briefs, dynamic subagent learnings,
+              and core RAPIDS capabilities. View architectural context and patterns.
+            </p>
+            <span class="utility-badge">Available</span>
+          </a>
+
+          <a href="#" class="utility-card" id="projectTypeUtilityCard">
+            <h4>🏗️ Project Intelligence</h4>
+            <p>
+              View project-specific intelligence artifacts based on project type
+              (brownfield codebase analysis or greenfield architecture blueprints).
+            </p>
+            <span class="utility-badge">Available</span>
+          </a>
+
+          <div class="utility-card" style="opacity: 0.6; cursor: not-allowed;">
+            <h4>✅ Checkpoint Dashboard</h4>
+            <p>
+              View system checkpoint results, runtime validation status, quality check summaries,
+              and user review checkpoint history.
+            </p>
+            <span class="utility-badge coming-soon">Coming Soon</span>
+          </div>
+
+          <div class="utility-card" style="opacity: 0.6; cursor: not-allowed;">
+            <h4>💬 Feedback Manager</h4>
+            <p>
+              Browse system and user feedback items, view blast radius impact,
+              classify issues, and trigger rework cycles.
+            </p>
+            <span class="utility-badge coming-soon">Coming Soon</span>
+          </div>
+
+          <div class="utility-card" style="opacity: 0.6; cursor: not-allowed;">
+            <h4>🔗 Traceability Explorer</h4>
+            <p>
+              Navigate end-to-end traceability from problem statement through research,
+              analysis, planning, implementation, to deployed code.
+            </p>
+            <span class="utility-badge coming-soon">Coming Soon</span>
+          </div>
+
+          <div class="utility-card" style="opacity: 0.6; cursor: not-allowed;">
+            <h4>⏱️ Wave Timeline Viewer</h4>
+            <p>
+              Visualize wave execution timeline, feature completion status,
+              parallel agent activity, and checkpoint gates.
+            </p>
+            <span class="utility-badge coming-soon">Coming Soon</span>
+          </div>
+
+          <div class="utility-card" style="opacity: 0.6; cursor: not-allowed;">
+            <h4>🧪 Test Coverage Map</h4>
+            <p>
+              View test results by feature, regression suite history,
+              runtime validation outcomes, and quality check trends.
+            </p>
+            <span class="utility-badge coming-soon">Coming Soon</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="cta-section">
+        <h2>🚀 The RAPIDS Differentiator</h2>
+        <p style="font-size: 1.15rem; line-height: 1.8; margin-bottom: 32px;">
+          RAPIDS transforms Claude Code from a helpful assistant into a <strong>reliable enterprise delivery engine</strong>.
+          Six integrated phases, deterministic orchestration, automated quality gates, and end-to-end traceability
+          ensure <strong>predictable, auditable, production-grade outcomes</strong>.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
+          <div style="background: var(--surface-soft); padding: 24px; border-radius: var(--radius); border: 1px solid var(--line);">
+            <h4 style="margin-bottom: 12px; color: var(--brand); font-size: 1.1rem;">⚙️ Deterministic Orchestration</h4>
+            <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6;">
+              Python state machine computes exact next action from state files. Zero workflow hallucination.
+              Every step logged and traceable.
+            </p>
+          </div>
+
+          <div style="background: var(--surface-soft); padding: 24px; border-radius: var(--radius); border: 1px solid var(--line);">
+            <h4 style="margin-bottom: 12px; color: var(--brand); font-size: 1.1rem;">✅ Automated Quality Gates</h4>
+            <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6;">
+              System checkpoints run after every wave: functional tests, runtime validation, regression suite.
+              Failures auto-classified and routed to root cause phase.
+            </p>
+          </div>
+
+          <div style="background: var(--surface-soft); padding: 24px; border-radius: var(--radius); border: 1px solid var(--line);">
+            <h4 style="margin-bottom: 12px; color: var(--brand); font-size: 1.1rem;">🔗 End-to-End Traceability</h4>
+            <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6;">
+              Problem → Research → ADRs → Specs → Features → Code → Tests → Deployment.
+              Full audit trail for compliance and governance.
+            </p>
+          </div>
+
+          <div style="background: var(--surface-soft); padding: 24px; border-radius: var(--radius); border: 1px solid var(--line);">
+            <h4 style="margin-bottom: 12px; color: var(--brand); font-size: 1.1rem;">🧪 NO MOCKS Testing</h4>
+            <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6;">
+              All tests run against real services. Mock frameworks blocked by pre-commit hooks.
+              Production parity guaranteed.
+            </p>
+          </div>
+
+          <div style="background: var(--surface-soft); padding: 24px; border-radius: var(--radius); border: 1px solid var(--line);">
+            <h4 style="margin-bottom: 12px; color: var(--brand); font-size: 1.1rem;">🌊 Wave-Based Execution</h4>
+            <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6;">
+              DAG-driven parallel feature development. Worktree isolation prevents merge conflicts.
+              Automated checkpoint gates between waves.
+            </p>
+          </div>
+
+          <div style="background: var(--surface-soft); padding: 24px; border-radius: var(--radius); border: 1px solid var(--line);">
+            <h4 style="margin-bottom: 12px; color: var(--brand); font-size: 1.1rem;">💬 Feedback-Driven Rework</h4>
+            <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.6;">
+              System and user feedback captured with blast radius analysis. Automated rework cycles
+              target root cause phase, not symptoms.
+            </p>
+          </div>
+        </div>
+
+        <div class="code-snippet">
+<span class="comment"># Deterministic orchestrator drives every step</span>
+<span class="command">aah run core.implement.orchestrator next-action</span>
+<span class="comment"># → {"action": "run_system_checkpoint", "wave": 0, "features": ["F001", "F002"]}</span>
+
+<span class="comment"># System checkpoint validates quality gates</span>
+<span class="command">aah run core.implement.validate_checkpoint run-system --wave 0</span>
+<span class="comment"># → Runtime validation ✓ | Regression suite ✓ | Integration tests ✓</span>
+
+<span class="comment"># User review checkpoint presents results for approval</span>
+<span class="command">aah run core.implement.validate_checkpoint run-user-review --wave 0</span>
+<span class="comment"># → User accepts → merge to integration → promote to develop</span>
+
+<span class="comment"># Feedback automatically classified and routed</span>
+<span class="command">aah run core.implement.feedback_capture capture-system --wave 0</span>
+<span class="comment"># → Failures routed: spec issues → plan phase | logic bugs → implement phase</span>
+        </div>
+
+        <div class="cta-buttons">
+          <a href="https://github.com/Deloitte-US-Consulting" class="btn btn-secondary" style="font-size: 1.05rem; padding: 14px 32px;">
+            📚 View Full Documentation
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p>
+      RAPIDS Framework — Built with determinism, tested with confidence, delivered with traceability.
+    </p>
+    <p style="margin-top: 8px; font-size: 0.8rem;" id="projectInfo">
+      © 2024-2026 Deloitte Consulting. All rights reserved.
+    </p>
+  </footer>
+
+  <script>
+    // RAPIDS Config Integration
+    const rapidsLoader = new RAPIDSLoader('./rapids-config.json');
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatTimestamp(isoString) {
+      try {
+        const date = new Date(isoString);
+        return date.toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch {
+        return isoString;
+      }
+    }
+
+    function parseMarkdown(markdown) {
+      // Simple markdown parser for project brief
+      let html = escapeHtml(markdown);
+
+      // Headers
+      html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+      html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+      html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+      // Bold
+      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+      // Lists (simple)
+      html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+      html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+      // Horizontal rule
+      html = html.replace(/^---$/gm, '<hr>');
+
+      // Paragraphs
+      html = html.split('\n\n').map(p => {
+        if (p.startsWith('<h') || p.startsWith('<ul') || p.startsWith('<hr')) {
+          return p;
+        }
+        return `<p>${p}</p>`;
+      }).join('\n');
+
+      return html;
+    }
+
+    async function loadProjectInfo() {
+      const intakeSection = document.getElementById('intakeSection');
+      const projectContext = document.getElementById('projectContext');
+      const phasePlanSection = document.getElementById('phasePlanSection');
+      const phasePlanGrid = document.getElementById('phasePlanGrid');
+      const headerTitle = document.getElementById('headerTitle');
+      const headerTagline = document.getElementById('headerTagline');
+      const phaseNameHeader = document.getElementById('phaseNameHeader');
+      const waveNumberHeader = document.getElementById('waveNumberHeader');
+      const complexityHeader = document.getElementById('complexityHeader');
+      const projectBrief = document.getElementById('projectBrief');
+      const intakeQuestionsContainer = document.getElementById('intakeQuestionsContainer');
+      const projectMetadata = document.getElementById('projectMetadata');
+      const progressSummary = document.getElementById('progressSummary');
+      const recentActivity = document.getElementById('recentActivity');
+      const projectInfoFooter = document.getElementById('projectInfo');
+      const dagStats = document.getElementById('dagStats');
+      const checkpointStats = document.getElementById('checkpointStats');
+
+      try {
+        await rapidsLoader.init();
+
+        if (!rapidsLoader.isConfigured()) {
+          console.log('[RAPIDS Dashboard] No config found');
+          headerTagline.textContent = 'Configure rapids-config.json to load project data';
+          return;
+        }
+
+        // Show sections
+        intakeSection.style.display = 'block';
+        projectContext.style.display = 'block';
+        phasePlanSection.style.display = 'block';
+
+        const info = rapidsLoader.getProjectInfo();
+        const status = rapidsLoader.getStatus();
+        console.log('[RAPIDS Dashboard] Config loaded:', status);
+
+        // Auto-load all configured artifacts
+        const { results, errors } = await rapidsLoader.autoLoadAll();
+        console.log('[RAPIDS Dashboard] Auto-loaded artifacts:', results);
+
+        // ========== ITERATION INFORMATION ==========
+        // Only show if we have actual iteration data
+        const hasIterationData = (results.phase_plan && results.phase_plan.iteration) ||
+                                  (results.iteration_history && results.iteration_history.iterations);
+
+        if (hasIterationData) {
+          document.getElementById('iterationInfo').style.display = 'block';
+
+          const currentIterationEl = document.getElementById('currentIteration');
+          const scenarioInfoEl = document.getElementById('scenarioInfo');
+          const iterationTimelineEl = document.getElementById('iterationTimeline');
+
+          // Display current iteration from phase-plan
+          if (results.phase_plan && results.phase_plan.iteration) {
+            const iteration = results.phase_plan.iteration;
+            const scenario = results.phase_plan.scenario || 'Unknown';
+            const scenarioName = results.phase_plan.name || results.phase_plan.scenario_name || 'N/A';
+            const fastPath = results.phase_plan.fast_path ? 'Yes' : 'No';
+
+            currentIterationEl.innerHTML = `
+              <div style="text-align: center; padding: 20px;">
+                <div class="iteration-badge in-progress">
+                  <span style="font-size: 1.5rem;">🔄</span>
+                  Iteration ${iteration}
+                </div>
+                <p style="margin-top: 12px; color: var(--muted); font-size: 0.9rem;">Currently in progress</p>
+              </div>
+            `;
+
+            scenarioInfoEl.innerHTML = `
+              <p><strong>Scenario:</strong> <code>${escapeHtml(scenario)}</code></p>
+              <p><strong>Name:</strong> ${escapeHtml(scenarioName)}</p>
+              ${results.phase_plan.problem_statement ? `<p><strong>Focus:</strong> ${escapeHtml(results.phase_plan.problem_statement)}</p>` : ''}
+              <p><strong>Fast Path:</strong> <code>${fastPath}</code></p>
+            `;
+          }
+
+          // Display iteration history timeline
+          if (results.iteration_history && results.iteration_history.iterations) {
+            const iterations = results.iteration_history.iterations;
+            const timelineHTML = iterations.map(iter => {
+              const statusClass = iter.status === 'completed' ? 'completed' : 'in-progress';
+              const statusIcon = iter.status === 'completed' ? '✓' : '⚙️';
+              const dateText = iter.completed || iter.started || '';
+
+              return `
+                <div class="iteration-item ${statusClass}">
+                  <div class="iter-number">${statusIcon} ${iter.number}</div>
+                  <div class="iter-status">${escapeHtml(iter.status)}</div>
+                  ${dateText ? `<div class="iter-date">${escapeHtml(dateText)}</div>` : ''}
+                  ${iter.scope ? `<div style="font-size: 0.75rem; color: var(--muted); margin-top: 6px;">${escapeHtml(iter.scope)}</div>` : ''}
+                </div>
+              `;
+            }).join('');
+
+            iterationTimelineEl.innerHTML = `
+              <div class="iteration-timeline">${timelineHTML}</div>
+            `;
+          } else {
+            iterationTimelineEl.innerHTML = '<p style="color: var(--subtle);">No iteration history available</p>';
+          }
+        }
+
+        // Update header title and tagline
+        const projectName = results.manifest?.project_name || info.name;
+        if (projectName !== 'Unknown Project') {
+          // Add iteration number to title if available
+          if (results.phase_plan && results.phase_plan.iteration) {
+            headerTitle.textContent = `${projectName} — Iteration ${results.phase_plan.iteration}`;
+          } else {
+            headerTitle.textContent = projectName;
+          }
+
+          if (results.intake?.problem_statement) {
+            headerTagline.textContent = results.intake.problem_statement;
+          } else {
+            headerTagline.textContent = `Enterprise AI delivery powered by RAPIDS framework`;
+          }
+        }
+
+        // Update header badges
+        if (results.manifest) {
+          const manifest = results.manifest;
+          if (manifest.current_phase) {
+            phaseNameHeader.textContent = manifest.current_phase.toUpperCase();
+          }
+          if (manifest.complexity_tier) {
+            complexityHeader.textContent = manifest.complexity_tier.toUpperCase();
+          }
+        }
+
+        if (results.progress && results.progress.current_wave !== undefined) {
+          waveNumberHeader.textContent = results.progress.current_wave !== null ? results.progress.current_wave : 'N/A';
+        }
+
+        // ========== PROJECT TYPE CONDITIONAL (Brownfield vs Greenfield) ==========
+        const projectTypeCard = document.getElementById('projectTypeCard');
+        if (projectTypeCard && results.manifest) {
+          const projectType = rapidsLoader.getProjectType(results.manifest);
+
+          if (projectType === 'brownfield') {
+            projectTypeCard.innerHTML = `
+              <div class="feature-icon traceability">🏗️</div>
+              <h3>3. Brownfield Intelligence</h3>
+              <p class="what">
+                <strong>How it works:</strong> Automated codebase profiling generates architecture diagrams,
+                dependency maps, codebase structure analysis, and tech stack inventory.
+              </p>
+              <div class="impact">
+                <strong>In This Project</strong>
+                Four artifacts auto-generated: Architecture (mermaid), Codebase Structure, Dependency Map, Tech Stack.
+                Stored in <code>.rapids/brownfield/</code>.
+              </div>
+              <div class="value">
+                ✓ Instant codebase understanding. No manual discovery required.
+              </div>
+              <a href="./utilities/brownfield-viewer.html" class="utility-link">🏗️ View Brownfield Intel →</a>
+            `;
+          } else {
+            // Greenfield or unknown project type
+            projectTypeCard.innerHTML = `
+              <div class="feature-icon traceability">🌱</div>
+              <h3>3. Greenfield Project</h3>
+              <p class="what">
+                <strong>How it works:</strong> Building from scratch with clean architecture,
+                modern patterns, and best practices from day one.
+              </p>
+              <div class="impact">
+                <strong>In This Project</strong>
+                Starting fresh with no legacy constraints. Full architectural freedom.
+              </div>
+              <div class="value">
+                ✓ Clean slate. Optimized structure from the start.
+              </div>
+              <a href="./utilities/greenfield-viewer.html" class="utility-link">🌱 View Greenfield Project →</a>
+            `;
+          }
+
+          // Also update the utilities section card
+          const projectTypeUtilityCard = document.getElementById('projectTypeUtilityCard');
+          if (projectTypeUtilityCard) {
+            if (projectType === 'brownfield') {
+              projectTypeUtilityCard.href = './utilities/brownfield-viewer.html';
+              projectTypeUtilityCard.querySelector('h4').textContent = '🏗️ Brownfield Intelligence';
+              projectTypeUtilityCard.querySelector('p').textContent =
+                'Explore automated codebase profiling: architecture diagrams, dependency maps, tech stack analysis, and codebase structure insights.';
+            } else {
+              projectTypeUtilityCard.href = './utilities/greenfield-viewer.html';
+              projectTypeUtilityCard.querySelector('h4').textContent = '🌱 Greenfield Project';
+              projectTypeUtilityCard.querySelector('p').textContent =
+                'View greenfield project insights: architecture blueprints, design decisions, implementation progress, and quality metrics (Coming Soon).';
+            }
+          }
+        }
+
+        // ========== INTAKE SECTION ==========
+        // Render Project Brief
+        if (results.project_brief) {
+          const briefHTML = parseMarkdown(results.project_brief);
+          projectBrief.innerHTML = `<div class="project-brief-content">${briefHTML}</div>`;
+        } else if (errors.project_brief) {
+          projectBrief.innerHTML = `<p style="color: var(--warn);">⚠️ Project brief not found at .knowledge/project-brief.md</p>`;
+        }
+
+        // Render Intake Questions by Round
+        if (results.intake && results.intake.rounds) {
+          const rounds = results.intake.rounds;
+          const roundsHTML = rounds.map(round => {
+            const questionsHTML = round.questions.map(q => {
+              let answerHTML = '';
+              if (Array.isArray(q.answer)) {
+                answerHTML = '<ul>' + q.answer.map(a => `<li>${escapeHtml(a)}</li>`).join('') + '</ul>';
+              } else {
+                answerHTML = `<code>${escapeHtml(q.answer)}</code>`;
+              }
+
+              const inferredBadge = q.inferred ? '<span class="inferred-badge">Inferred</span>' : '';
+
+              return `
+                <div class="intake-question">
+                  <div class="q">${escapeHtml(q.question)}${inferredBadge}</div>
+                  <div class="a">${answerHTML}</div>
+                </div>
+              `;
+            }).join('');
+
+            const phaseIcons = {
+              'start': '🚀',
+              'research': '🔬',
+              'analysis': '📊',
+              'plan': '🗺️',
+              'implement': '⚙️',
+              'deploy': '🚀',
+              'sustain': '🔧'
+            };
+
+            return `
+              <div class="intake-round">
+                <div class="intake-round-header">
+                  <span style="font-size: 1.5rem;">${phaseIcons[round.phase] || '●'}</span>
+                  <h4>${round.phase} Phase Questions</h4>
+                  <span class="timestamp">${formatTimestamp(round.timestamp)}</span>
+                </div>
+                <div class="intake-questions">
+                  ${questionsHTML}
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          intakeQuestionsContainer.innerHTML = `<div class="intake-rounds">${roundsHTML}</div>`;
+        } else if (errors.intake) {
+          intakeQuestionsContainer.innerHTML = `<p style="color: var(--warn);">⚠️ Intake questions not found</p>`;
+        }
+
+        // ========== PROJECT CONFIGURATION ==========
+        // Render Project Metadata (Manifest)
+        if (results.manifest) {
+          const manifest = results.manifest;
+          let metadataHTML = `
+            <p><strong>Project Name:</strong> <code>${escapeHtml(manifest.project_name || 'unknown')}</code></p>
+            <p><strong>Type:</strong> <code>${escapeHtml(manifest.project_type || 'unknown')}</code></p>
+            <p><strong>Phase:</strong> <code>${escapeHtml(manifest.current_phase || 'unknown')}</code></p>
+            <p><strong>Complexity:</strong> <code>${escapeHtml(manifest.complexity_tier || 'unknown')}</code></p>
+          `;
+
+          if (manifest.stack_choices && manifest.stack_choices.primary) {
+            metadataHTML += `<p><strong>Stack:</strong> <code>${escapeHtml(manifest.stack_choices.primary)}</code></p>`;
+          }
+
+          if (manifest.completed_artifacts && manifest.completed_artifacts.length > 0) {
+            metadataHTML += `<p><strong>Completed Artifacts:</strong> ${manifest.completed_artifacts.length}</p>`;
+          }
+
+          projectMetadata.innerHTML = metadataHTML;
+        } else if (errors.manifest) {
+          projectMetadata.innerHTML = `<p style="color: var(--warn);">⚠️ Manifest file not found</p>`;
+        }
+
+        // Render Progress Summary
+        if (results.progress) {
+          const progress = results.progress;
+          let progressHTML = `
+            <p><strong>Last Completed:</strong> <code>${escapeHtml(progress.last_completed_feature || 'None')}</code></p>
+            <p><strong>Current Wave:</strong> <code>${progress.current_wave !== null ? progress.current_wave : 'N/A'}</code></p>
+          `;
+
+          if (progress.in_progress_features && progress.in_progress_features.length > 0) {
+            progressHTML += `
+              <p><strong>In Progress:</strong></p>
+              <ul style="margin-top: 4px;">
+                ${progress.in_progress_features.map(f => `<li><code>${escapeHtml(f)}</code></li>`).join('')}
+              </ul>
+            `;
+          }
+
+          if (progress.environment_state) {
+            progressHTML += `<p><strong>Environment:</strong> <code>${escapeHtml(progress.environment_state)}</code></p>`;
+          }
+
+          progressSummary.innerHTML = progressHTML;
+        } else if (errors.progress) {
+          progressSummary.innerHTML = `<p style="color: var(--warn);">⚠️ Progress file not found</p>`;
+        }
+
+        // ========== PHASE PLAN CARDS ==========
+        if (results.phase_plan && results.phase_plan.phases) {
+          const phasesConfig = results.phase_plan.phases;
+          const currentPhase = results.manifest?.current_phase || '';
+
+          const phaseDefinitions = [
+            { key: 'research', icon: '🔬', name: 'Research', desc: 'Technology landscape & constraints' },
+            { key: 'analysis', icon: '📊', name: 'Analysis', desc: 'Architecture decisions & design' },
+            { key: 'plan', icon: '🗺️', name: 'Plan', desc: 'Feature specs & execution waves' },
+            { key: 'implement', icon: '⚙️', name: 'Implement', desc: 'Feature development & QA' },
+            { key: 'deploy', icon: '🚀', name: 'Deploy', desc: 'IaC & CI/CD pipelines' },
+            { key: 'sustain', icon: '🔧', name: 'Sustain', desc: 'Runbooks & observability' }
+          ];
+
+          const phaseCardsHTML = phaseDefinitions.map(phase => {
+            const config = phasesConfig[phase.key] || {};
+            const isRequired = config.required !== false;
+            const depth = config.depth || 'standard';
+            const reason = config.reason || 'Standard phase execution';
+            const isActive = phase.key === currentPhase;
+
+            if (!isRequired) {
+              return `
+                <div class="feature-card" style="opacity: 0.5; border-color: var(--line);">
+                  <div class="feature-icon ${phase.key}">${phase.icon}</div>
+                  <h3>${phase.name}</h3>
+                  <p class="what">${phase.desc}</p>
+                  <div class="value" style="background: #f3f4f6; border-color: #d1d5db; color: var(--subtle);">
+                    ⊘ Skipped for this project
+                  </div>
+                </div>
+              `;
+            }
+
+            return `
+              <div class="feature-card" style="${isActive ? 'border-color: var(--good); border-width: 2px; box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);' : ''}">
+                <div class="feature-icon ${phase.key}">${phase.icon}</div>
+                <h3>${phase.name}${isActive ? ' <span style="color: var(--good); font-size: 0.8rem;">▶ ACTIVE</span>' : ''}</h3>
+                <p class="what">${phase.desc}</p>
+                <div class="impact">
+                  <strong>Execution Depth</strong>
+                  <code style="display: block; margin-top: 6px; font-size: 0.95rem; text-transform: uppercase;">${escapeHtml(depth)}</code>
+                </div>
+                <div class="value" style="background: ${isActive ? '#ecfeff' : '#f0fdfa'}; border-color: ${isActive ? 'var(--brand)' : '#99f6e4'}; color: ${isActive ? 'var(--brand)' : '#115e59'};">
+                  ${escapeHtml(reason)}
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          phasePlanGrid.innerHTML = phaseCardsHTML;
+        } else if (errors.phase_plan) {
+          phasePlanGrid.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">⚠️</div>
+              <p>Phase plan file not found</p>
+            </div>
+          `;
+        }
+
+        // ========== RECENT ACTIVITY ==========
+        if (results.progress) {
+          const progress = results.progress;
+          const sessions = progress.session_history || [];
+
+          if (sessions.length > 0) {
+            const recentSessions = sessions.slice(-8).reverse(); // Last 8 sessions
+            const activityHTML = recentSessions.map(session => {
+              return `
+                <div class="activity-item">
+                  <div class="timestamp">${formatTimestamp(session.timestamp)}</div>
+                  <div class="summary">${escapeHtml(session.summary || 'Session activity')}</div>
+                  ${session.features_completed && session.features_completed.length > 0
+                    ? `<div style="font-size: 0.8rem; color: var(--good); margin-top: 4px;">✓ Completed: ${session.features_completed.join(', ')}</div>`
+                    : ''}
+                </div>
+              `;
+            }).join('');
+
+            recentActivity.innerHTML = `
+              <div class="activity-list">${activityHTML}</div>
+              <p style="margin-top: 12px; font-size: 0.8rem; color: var(--subtle);">
+                <strong>Last Updated:</strong> ${formatTimestamp(progress.last_updated)}
+              </p>
+            `;
+          } else {
+            recentActivity.innerHTML = `<p style="color: var(--subtle);">No session history recorded yet</p>`;
+          }
+        } else if (errors.progress) {
+          recentActivity.innerHTML = `<p style="color: var(--warn);">⚠️ Progress file not found</p>`;
+        }
+
+        // Update DAG stats if available
+        if (results.dag && dagStats) {
+          const dag = results.dag;
+          const featureCount = dag.nodes ? dag.nodes.length : 0;
+          const edgeCount = dag.edges ? dag.edges.length : 0;
+          dagStats.textContent = `${featureCount} features organized with ${edgeCount} dependencies. View interactive graph to explore waves.`;
+        }
+
+        // Update checkpoint stats if available
+        if (results.waves && checkpointStats) {
+          const waves = results.waves;
+          const waveCount = waves.execution_waves ? waves.execution_waves.length : 0;
+          checkpointStats.textContent = `${waveCount} execution waves with checkpoints after each. System validates runtime + quality + regression.`;
+        }
+
+        // Update footer with project info
+        if (projectInfoFooter && info.name !== 'Unknown Project') {
+          projectInfoFooter.innerHTML = `
+            <strong style="color: var(--brand);">${info.name}</strong><br>
+            Workspace: ${info.workspace} / Project: ${info.project}
+            <br>
+            <span style="font-size: 0.75rem; color: var(--subtle);">
+              Auto-loaded ${status.autoLoadArtifacts.length} artifact(s)
+            </span>
+            <br>
+            <span style="font-size: 0.7rem; margin-top: 4px; display: inline-block;">
+              © 2024-2026 Deloitte Consulting. All rights reserved.
+            </span>
+          `;
+        }
+
+        // Remove loading states
+        intakeSection.classList.remove('loading');
+        projectContext.classList.remove('loading');
+
+      } catch (err) {
+        console.error('[RAPIDS Dashboard] Load error:', err);
+        if (intakeSection.style.display === 'block') {
+          intakeSection.classList.remove('loading');
+          projectBrief.innerHTML = `<p style="color: var(--warn);">⚠️ Failed to load project data: ${err.message}</p>`;
+        }
+        if (projectContext.style.display === 'block') {
+          projectContext.classList.remove('loading');
+        }
+      }
+    }
+
+    // Load project info on page load
+    loadProjectInfo();
+  </script>
+</body>
+</html>

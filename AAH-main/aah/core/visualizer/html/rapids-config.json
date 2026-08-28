@@ -1,0 +1,130 @@
+{
+  "$schema": "./rapids-config.schema.json",
+  "version": "1.0.0",
+  "description": "RAPIDS Frontend Configuration - Paths to project artifacts for auto-loading utilities",
+
+  "project": {
+    "name": "RAPIDS Demo Finance Project",
+    "workspace_root": "../../rapids-workspaces",
+    "active_workspace": "ws01",
+    "active_project": "RAPIDS-demo-proj-finance-project"
+  },
+
+  "paths": {
+    "comment": "Paths relative to this config file. Use {workspace} and {project} as placeholders.",
+
+    "dag": {
+      "file": "{workspace_root}/{active_workspace}/{active_project}/.rapids/plan/dag.json",
+      "auto_load": true
+    },
+
+    "waves": {
+      "file": "{workspace_root}/{active_workspace}/{active_project}/.rapids/plan/waves.json",
+      "auto_load": true
+    },
+
+    "features": {
+      "file": "{workspace_root}/{active_workspace}/{active_project}/.rapids/plan/feature-list.json",
+      "auto_load": false
+    },
+
+    "manifest": {
+      "file": "{workspace_root}/{active_workspace}/{active_project}/.rapids/manifest.yaml",
+      "auto_load": true
+    },
+
+    "intake": {
+      "file": "{workspace_root}/{active_workspace}/{active_project}/.rapids/intake.json",
+      "auto_load": true
+    },
+
+    "project_brief": {
+      "file": "{workspace_root}/{active_workspace}/{active_project}/knowledge/project-brief.md",
+      "auto_load": true
+    },
+
+    "phase_plan": {
+      "file": "{workspace_root}/{active_workspace}/{active_project}/.rapids/phase-plan.yaml",
+      "auto_load": true
+    },
+
+    "progress": {
+      "file": "{workspace_root}/{active_workspace}/{active_project}/.rapids/claude-progress.json",
+      "auto_load": true
+    },
+
+    "iteration_history": {
+      "file": "{workspace_root}/{active_workspace}/{active_project}/.rapids/iteration-history.yaml",
+      "auto_load": true
+    },
+
+    "checkpoint_results": {
+      "dir": "{workspace_root}/{active_workspace}/{active_project}/.rapids/implement/checkpoint-results",
+      "auto_load": false
+    },
+
+    "feedback": {
+      "system": "{workspace_root}/{active_workspace}/{active_project}/.rapids/implement/feedback/system-feedback-wave-{wave}.json",
+      "user": "{workspace_root}/{active_workspace}/{active_project}/.rapids/implement/feedback/user-feedback-wave-{wave}.json",
+      "auto_load": false
+    },
+
+    "test_results": {
+      "dir": "{workspace_root}/{active_workspace}/{active_project}/.rapids/implement/test-results",
+      "auto_load": false
+    },
+
+    "runtime_results": {
+      "dir": "{workspace_root}/{active_workspace}/{active_project}/.rapids/implement/runtime-results",
+      "auto_load": false
+    },
+
+    "knowledge_base": {
+      "project_brief": "{workspace_root}/{active_workspace}/{active_project}/knowledge/project-brief.md",
+      "domain_brief": "{workspace_root}/{active_workspace}/{active_project}/knowledge/domain-brief.md",
+      "comment": "Layer 1: Static knowledge files"
+    },
+
+    "subagent_learnings": {
+      "file": "{workspace_root}/{active_workspace}/{active_project}/.rapids/implement/subagent-learnings.json",
+      "auto_load": true,
+      "comment": "Layer 2: Dynamic learnings from feature implementation"
+    },
+
+    "brownfield": {
+      "codebase_learning": "{workspace_root}/{active_workspace}/{active_project}/.rapids/brownfield/codebase-learning.md",
+      "codebase_profile": "{workspace_root}/{active_workspace}/{active_project}/.rapids/brownfield/codebase-profile.json",
+      "architecture_mmd": "{workspace_root}/{active_workspace}/{active_project}/.rapids/brownfield/architecture.mmd",
+      "architecture_md": "{workspace_root}/{active_workspace}/{active_project}/.rapids/brownfield/architecture-diagram.md",
+      "data_model_md": "{workspace_root}/{active_workspace}/{active_project}/.rapids/brownfield/data-model-diagram.md",
+      "data_flow_md": "{workspace_root}/{active_workspace}/{active_project}/.rapids/brownfield/data-flow-diagram.md",
+      "dependency_graph_md": "{workspace_root}/{active_workspace}/{active_project}/.rapids/brownfield/dependency-graph.md",
+      "codebase_structure": "{workspace_root}/{active_workspace}/{active_project}/.rapids/brownfield/codebase-structure.md",
+      "tech_stack": "{workspace_root}/{active_workspace}/{active_project}/.rapids/brownfield/tech-stack.md",
+      "dependency_map": "{workspace_root}/{active_workspace}/{active_project}/.rapids/brownfield/dependency-map.md",
+      "auto_load": false
+    }
+  },
+
+  "ui": {
+    "theme": "light",
+    "auto_layout": true,
+    "show_upload_gate": false,
+    "enable_local_storage": true
+  },
+
+  "features": {
+    "dag_viewer": {
+      "enabled": true,
+      "default_view": "all_waves"
+    },
+    "checkpoint_dashboard": {
+      "enabled": false,
+      "comment": "Coming soon"
+    },
+    "feedback_manager": {
+      "enabled": false,
+      "comment": "Coming soon"
+    }
+  }
+}

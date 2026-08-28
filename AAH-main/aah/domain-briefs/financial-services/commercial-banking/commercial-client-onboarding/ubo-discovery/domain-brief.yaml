@@ -1,0 +1,160 @@
+id: financial-services/commercial-banking/commercial-client-onboarding/ubo-discovery
+parent_id: financial-services/commercial-banking/commercial-client-onboarding
+level: 4
+name: "UBO Discovery"
+description: >
+  Ultimate Beneficial Owner discovery: resolving the ownership chain of a
+  commercial customer entity through parent companies, holding structures,
+  and trust arrangements to identify the natural persons who ultimately
+  own or control the customer. Driven by the FinCEN CDD Rule and parallel
+  international requirements.
+
+typical_horizontals:
+  - ai-applications
+  - ai-infra-platforms
+
+keywords:
+  strong:
+    - "ubo"
+    - "ubo discovery"
+    - "beneficial owner"
+    - "ownership chain"
+    - "beneficial ownership"
+  moderate:
+    - "ownership"
+    - "parent company"
+    - "holding structure"
+    - "control person"
+    - "25% threshold"
+
+sample_problem_statements:
+  - "Automate beneficial-owner discovery across multi-layered corporate structures"
+  - "Build a UBO graph resolver that handles circular ownership and nominee arrangements"
+
+processes:
+  - name: "Ownership-Chain Traversal"
+    steps:
+      - "Collect direct shareholders of the customer entity"
+      - "For any shareholder that is an entity, recurse into its shareholders"
+      - "Continue until all paths terminate in natural persons or ownership < 25%"
+      - "Flag circular ownership structures for manual review"
+      - "Flag nominee arrangements requiring disclosure of the beneficial party"
+  - name: "Natural-Person UBO Identification"
+    steps:
+      - "Apply 25% equity threshold per FinCEN CDD Rule"
+      - "Identify persons with significant control (CEO, president, managing partners)"
+      - "Deduplicate persons appearing on multiple ownership paths"
+      - "Verify each UBO's identity via individual KYC"
+  - name: "Edge Case Handling"
+    steps:
+      - "Trusts: identify settlor, trustees, beneficiaries, and protectors"
+      - "Foundations: identify founders and council members"
+      - "Sovereign entities: apply exception rules with documented rationale"
+      - "Publicly listed parents: record but do not recurse into public-company shareholders"
+
+data_entities:
+  - name: "OwnershipEdge"
+    attributes:
+      - "fromEntityId"
+      - "toEntityId"
+      - "ownershipPct"
+      - "controlType (direct, indirect, nominee)"
+      - "sourceDocument"
+      - "asOfDate"
+  - name: "OwnershipGraph"
+    attributes:
+      - "customerEntityId"
+      - "edges (array of OwnershipEdge)"
+      - "resolvedUBOs (array of BeneficialOwner)"
+      - "unresolvedPaths (array)"
+      - "resolvedAt"
+      - "resolverMethod (automated, analyst-assisted, fully-manual)"
+  - name: "BeneficialOwner"
+    attributes:
+      - "personId"
+      - "name"
+      - "dateOfBirth"
+      - "nationality"
+      - "residenceCountry"
+      - "ownershipPct (aggregated across paths)"
+      - "controlType"
+      - "ownershipPaths (array of paths showing how UBO reaches customer)"
+      - "verificationStatus (unverified, verified, failed)"
+
+glossary:
+  - term: "UBO"
+    definition: "Ultimate Beneficial Owner — natural person at the end of the ownership chain."
+  - term: "Control person"
+    definition: "Individual with significant management authority regardless of ownership percentage."
+  - term: "Nominee arrangement"
+    definition: "A person or entity holding shares or acting on behalf of another party who is the actual beneficial owner."
+  - term: "Beneficial ownership registry"
+    definition: "Government-maintained registry of beneficial ownership information (UK PSC, EU UBO registries, U.S. FinCEN BOI)."
+  - term: "Significant control"
+    definition: "Authority to make or veto key decisions at an entity level; can exist without equity ownership."
+  - term: "Layer"
+    definition: "One level in an ownership chain between customer and UBO; complex structures have many layers."
+
+typical_integrations:
+  - "Corporate registries (D&B, Bureau van Dijk Orbis, local registries)"
+  - "Beneficial ownership registries (UK PSC, EU BORs, FinCEN BOI when available)"
+  - "Graph databases for ownership traversal (Neo4j, Amazon Neptune)"
+  - "Identity verification for UBO KYC (Jumio, Onfido)"
+
+regulations:
+  - name: "FinCEN CDD Rule (U.S.)"
+    impact: >
+      Requires identification of UBOs at 25% equity OR significant control.
+      Requires certification by a representative of the customer entity.
+      Drives the 25% threshold, certification capture, and refresh cadence.
+  - name: "Corporate Transparency Act / BOI Reporting (U.S.)"
+    impact: >
+      Entities must report beneficial ownership information to FinCEN.
+      Drives integration with FinCEN BOI, treatment of reported UBO data
+      as corroboration source.
+  - name: "EU AMLD5 / AMLD6 UBO Registry Requirements"
+    impact: >
+      EU member states maintain central UBO registries. Drives EU-
+      jurisdiction customer flows to consult the appropriate national
+      register."
+
+kpis:
+  - "Average UBO-resolution cycle time"
+  - "% of cases with fully automated UBO resolution"
+  - "% of ownership chains requiring analyst intervention"
+  - "UBO data-accuracy rate (verified via periodic sampling)"
+
+common_patterns:
+  - name: "Graph-Based Ownership Resolution"
+    description: >
+      Model ownership as a directed graph. UBO resolution becomes graph
+      traversal with aggregation of ownership percentages along paths.
+      Circular or dead-end paths are detected structurally, not via
+      heuristics.
+    when_to_apply: "Any system resolving multi-layer corporate ownership."
+    anti_patterns:
+      - "Representing ownership as flat tables requiring recursive SQL"
+      - "Storing only direct owners, recomputing UBO from scratch each time"
+      - "No explicit representation of 'unresolved' paths"
+  - name: "Automated Resolution with Analyst Fallback"
+    description: >
+      Attempt fully automated resolution first. On failure (missing data,
+      circular structure, nominee flag), route to analyst with the
+      partial graph and identified obstacles.
+    when_to_apply: >
+      Always. Pure automation fails on complex structures; pure manual
+      resolution is unscalable.
+    anti_patterns:
+      - "All cases sent to analysts regardless of complexity"
+      - "Silent failure with no analyst escalation path"
+  - name: "Source Attribution per Edge"
+    description: >
+      Every ownership edge carries a source-document reference and
+      as-of date. This makes the UBO graph reproducible and auditable.
+    when_to_apply: "Always for regulated KYB."
+
+anti_patterns:
+  - "LLM-produced UBO determinations without a deterministic evidence trail"
+  - "UBO data collected once, never refreshed when entity changes"
+  - "25% threshold applied uniformly without regard for jurisdictions that use lower thresholds"
+  - "Treating 'beneficial owner' and 'authorized signatory' as synonymous"

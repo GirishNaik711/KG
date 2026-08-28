@@ -1,0 +1,133 @@
+id: financial-services
+parent_id: null
+level: 1
+name: "Financial Services"
+description: >
+  The financial services industry — banking, lending, payments, investment
+  management, insurance, and capital markets. This is the root node for
+  the financial-services vertical. Its content is inherited by every
+  descendant node via the merge-from-ancestors rule.
+
+typical_horizontals:
+  - ai-applications
+  - ai-infra-platforms
+  - data-pipelines
+  - data-modernization
+
+keywords:
+  strong:
+    - "financial services"
+    - "banking"
+    - "fintech"
+    - "capital markets"
+  moderate:
+    - "bank"
+    - "finance"
+    - "financial"
+    - "lending"
+    - "payments"
+    - "insurance"
+
+sample_problem_statements:
+  - "Build an AI assistant that helps financial-services clients understand their accounts"
+  - "Automate compliance reporting for a regional bank"
+  - "Reverse-engineer a legacy core banking system"
+
+reference_frameworks:
+  - name: "Basel III / Basel IV — International regulatory framework for banks"
+    url: "https://www.bis.org/bcbs/basel3.htm"
+  - name: "FFIEC Guidance (U.S.) — Federal Financial Institutions Examination Council"
+    url: "https://www.ffiec.gov/"
+  - name: "BIAN — Banking Industry Architecture Network"
+    url: "https://bian.org/"
+  - name: "FATF — Financial Action Task Force (AML/CFT global standards)"
+    url: "https://www.fatf-gafi.org/"
+  - name: "PCI DSS — Payment Card Industry Data Security Standard"
+    url: "https://www.pcisecuritystandards.org/"
+
+regulations:
+  - name: "Bank Secrecy Act (BSA) / Anti-Money Laundering (AML)"
+    impact: >
+      U.S. federal requirement to have a risk-based AML program, file SARs,
+      and maintain audit trails for customer activity. Drives case-management
+      architecture, audit logging, and retention policies across every
+      banking workload.
+  - name: "Gramm-Leach-Bliley Act (GLBA)"
+    impact: >
+      Requires financial institutions to protect non-public personal
+      information. Drives data classification, encryption at rest and in
+      transit, access controls, and third-party vendor diligence.
+  - name: "Sarbanes-Oxley Act (SOX)"
+    impact: >
+      Requires internal controls over financial reporting. Drives
+      change-management discipline, separation of duties in deployment
+      pipelines, and auditable logs of administrative actions.
+  - name: "OCC Third-Party Risk Management Guidance"
+    impact: >
+      Requires banks to manage risk from third-party service providers,
+      including cloud vendors and AI model providers. Drives vendor
+      evaluation, ongoing monitoring, and exit-plan documentation.
+  - name: "Consumer Financial Protection Act / UDAAP"
+    impact: >
+      Prohibits unfair, deceptive, or abusive acts or practices. Drives
+      content-policy design for consumer-facing AI applications and
+      fairness testing for decisioning models.
+  - name: "CCPA / CPRA and State Privacy Laws (U.S.)"
+    impact: >
+      Require data-subject rights (access, delete, opt-out) and purpose
+      limitation. Drives data-subject-request pipelines and consent
+      management architecture.
+  - name: "GDPR (EU clients)"
+    impact: >
+      Data protection for EU data subjects. Drives residency choices,
+      encryption, retention, and consent architecture.
+
+glossary:
+  - term: "KYC"
+    definition: "Know Your Customer — due diligence on customers to verify identity and assess risk."
+  - term: "KYB"
+    definition: "Know Your Business — due diligence performed on legal-entity customers."
+  - term: "AML"
+    definition: "Anti-Money Laundering — program of controls to detect and report money laundering."
+  - term: "CFT"
+    definition: "Combating the Financing of Terrorism — companion regime to AML."
+  - term: "SAR"
+    definition: "Suspicious Activity Report — regulatory filing for suspicious transactions or behavior."
+  - term: "PEP"
+    definition: "Politically Exposed Person — individual whose position carries elevated corruption risk."
+  - term: "BIAN"
+    definition: "Banking Industry Architecture Network — standardized service-domain reference model."
+  - term: "Core banking"
+    definition: "The backbone ledger-and-transaction system of a bank."
+
+typical_integrations:
+  - "Core banking platforms (Temenos, FIS, Finacle, Mambu)"
+  - "Sanctions and PEP screening (Dow Jones, Refinitiv, ComplyAdvantage)"
+  - "Credit bureaus (Experian, Equifax, TransUnion, D&B)"
+  - "Payment networks (Visa, Mastercard, ACH, SWIFT)"
+  - "Regulatory reporting platforms (AxiomSL, Wolters Kluwer)"
+  - "CRM platforms (Salesforce Financial Services Cloud)"
+
+kpis:
+  - "Regulatory findings (count, severity)"
+  - "Audit-log completeness"
+  - "Time-to-resolve compliance exception"
+  - "Customer satisfaction (CSAT/NPS) for digital channels"
+
+common_patterns:
+  - name: "Case-Based Audit Trail"
+    description: >
+      Every regulated workflow is modeled as a case with a durable ID, a
+      state machine, and an append-only event log. Every automated or
+      human action appends to the log.
+    when_to_apply: >
+      Any workflow subject to BSA/AML, SOX, or similar audit regimes.
+    anti_patterns:
+      - "Stateless request/response flows with no durable record of decisions"
+      - "Event logs stored only in application logs rotated after 30 days"
+      - "Approvals captured as booleans without approver identity or timestamp"
+
+anti_patterns:
+  - "Relying on 'the AI said so' as an acceptable audit trail"
+  - "Storing PII in model-training data without explicit lawful basis and consent"
+  - "Moving fast without compliance review for consumer-facing AI decisioning"

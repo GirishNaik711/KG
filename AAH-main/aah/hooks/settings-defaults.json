@@ -1,0 +1,65 @@
+{
+  "_comment": "Host-specific settings that `aah install` merges into the host settings file (e.g. .claude/settings.json). Keyed by platform. Merges reconcile against the `_aah` marker: env keys are only added when absent (a value the user already set is never overwritten); permissions.allow/deny are unioned with these defaults AND any entry aah previously added (recorded under `_aah`) that is no longer listed here is pruned. Entries the user added independently are never touched. NOTE: for Claude, file-permission checks only apply to Edit-family tools (Edit/Write/MultiEdit), NOT to Write() rules — a `Write(<path>)` deny is a dead rule the harness warns about. So secret-file protection is expressed with `Edit(<path>)` (which covers Write) and `Read(<path>)`; do NOT add `Write(<path>)` deny entries.",
+  "claude": {
+    "env": {
+      "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    },
+    "permissions": {
+      "allow": [
+        "Read",
+        "Write",
+        "Edit",
+        "Bash",
+        "Glob",
+        "WebFetch",
+        "WebSearch"
+      ],
+      "deny": [
+        "Read(**/.env)",
+        "Read(**/credentials.json)",
+        "Read(**/credentials.yaml)",
+        "Read(**/credentials.yml)",
+        "Read(**/*.pem)",
+        "Read(**/*.key)",
+        "Read(**/*.p12)",
+        "Read(**/*.pfx)",
+        "Read(**/id_rsa)",
+        "Read(**/id_ed25519)",
+        "Read(**/.netrc)",
+        "Read(**/.npmrc)",
+        "Read(**/.pypirc)",
+        "Read(**/secrets.json)",
+        "Read(**/secrets.yaml)",
+        "Read(**/secrets.yml)",
+        "Read(**/token.json)",
+        "Read(**/tokens.json)",
+        "Read(**/.aws/credentials)",
+        "Read(**/.ssh/config)",
+        "Read(**/.kube/config)",
+        "Read(**/.htpasswd)",
+        "Read(**/vault.yml)",
+        "Read(**/vault.yaml)",
+        "Read(**/service_account*.json)",
+        "Read(**/service-account*.json)",
+        "Read(**/.aah/build/.attestation-secret)",
+        "Edit(**/.env)",
+        "Edit(**/.env.local)",
+        "Edit(**/.env.*.local)",
+        "Edit(**/credentials.json)",
+        "Edit(**/credentials.yaml)",
+        "Edit(**/credentials.yml)",
+        "Edit(**/*.pem)",
+        "Edit(**/*.key)",
+        "Edit(**/*.p12)",
+        "Edit(**/*.pfx)",
+        "Edit(**/secrets.json)",
+        "Edit(**/secrets.yaml)",
+        "Edit(**/secrets.yml)",
+        "Edit(**/token.json)",
+        "Edit(**/tokens.json)",
+        "Edit(**/service_account*.json)",
+        "Edit(**/service-account*.json)"
+      ]
+    }
+  }
+}

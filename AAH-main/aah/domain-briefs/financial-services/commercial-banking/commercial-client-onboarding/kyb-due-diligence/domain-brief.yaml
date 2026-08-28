@@ -1,0 +1,163 @@
+id: financial-services/commercial-banking/commercial-client-onboarding/kyb-due-diligence
+parent_id: financial-services/commercial-banking/commercial-client-onboarding
+level: 4
+name: "KYB Due Diligence"
+description: >
+  The Know Your Business due-diligence phase of commercial onboarding:
+  verifying the legal entity's legitimacy, screening the entity and its
+  related parties against sanctions/PEP/adverse-media sources, and
+  producing a documented due-diligence package sufficient to support the
+  downstream risk rating and approval decisions.
+
+typical_horizontals:
+  - ai-applications
+  - ai-infra-platforms
+
+keywords:
+  strong:
+    - "kyb"
+    - "due diligence"
+    - "sanctions screening"
+    - "pep screening"
+    - "adverse media"
+  moderate:
+    - "know your business"
+    - "screening"
+    - "ofac"
+    - "sanctions hit"
+
+sample_problem_statements:
+  - "Automate sanctions and adverse-media screening for commercial clients"
+  - "Build a screening-hit disposition workflow with analyst-assisted review"
+
+processes:
+  - name: "Entity Legitimacy Verification"
+    steps:
+      - "Retrieve entity record from authoritative registry (D&B, local registry)"
+      - "Validate registration status (active, good-standing, dissolved)"
+      - "Cross-check stated addresses, officers, and incorporation details"
+      - "Flag entities with incomplete or inconsistent registry data for EDD"
+  - name: "Sanctions Screening"
+    steps:
+      - "Query OFAC SDN, sectoral sanctions, non-SDN lists for entity"
+      - "Query equivalent lists for EU, UN, UK, and local jurisdictions"
+      - "Screen beneficial owners, control persons, and authorized signatories"
+      - "Capture all hits with match confidence and context"
+  - name: "PEP Screening"
+    steps:
+      - "Screen beneficial owners and control persons against PEP sources"
+      - "Identify domestic PEPs, foreign PEPs, and international-organization PEPs"
+      - "Identify close associates and family members where data available"
+  - name: "Adverse Media Screening"
+    steps:
+      - "Search news and public-record sources for entity and related parties"
+      - "Classify hits by risk category (financial crime, corruption, civil litigation, reputational)"
+      - "Score by recency, severity, and source reliability"
+  - name: "Hit Disposition Workflow"
+    steps:
+      - "Triage each hit: likely false positive, possible match, confirmed match"
+      - "For possible/confirmed matches, gather supporting evidence"
+      - "Route to L2 analyst for decision"
+      - "Document disposition with rationale in the case event log"
+  - name: "Due Diligence Package Assembly"
+    steps:
+      - "Compile all screening results, dispositions, and evidence"
+      - "Generate DD summary document"
+      - "Attach to onboarding case for risk-rating input"
+
+data_entities:
+  - name: "ScreeningRun"
+    attributes:
+      - "runId"
+      - "caseId"
+      - "target (entity, UBO, control-person)"
+      - "provider (Dow Jones, Refinitiv, internal)"
+      - "listsQueried (array)"
+      - "runAt"
+      - "hitCount"
+  - name: "ScreeningHit"
+    attributes:
+      - "hitId"
+      - "runId"
+      - "listName"
+      - "matchedName"
+      - "matchConfidence (numeric 0-1)"
+      - "contextData (date of birth, aliases, reference number)"
+      - "disposition (false-positive, no-match, escalated, confirmed)"
+      - "analystId"
+      - "rationale"
+      - "disposedAt"
+  - name: "DueDiligencePackage"
+    attributes:
+      - "packageId"
+      - "caseId"
+      - "screeningRuns (array)"
+      - "edsNotes"
+      - "unresolvedIssues"
+      - "compiledAt"
+
+glossary:
+  - term: "SDN"
+    definition: "Specially Designated Nationals — OFAC's primary list of sanctioned individuals and entities."
+  - term: "Sectoral sanctions"
+    definition: "Sanctions restricting specific activities rather than all dealings (e.g., certain Russian-sector entities)."
+  - term: "Wolfsberg Group"
+    definition: "Association of 13 global banks that develops AML/KYC industry standards."
+  - term: "Fuzzy match"
+    definition: "Name-matching technique that finds near-matches accounting for spelling, transliteration, or word order differences."
+
+typical_integrations:
+  - "Dow Jones Risk & Compliance"
+  - "Refinitiv World-Check"
+  - "ComplyAdvantage"
+  - "LexisNexis Bridger / RDC"
+  - "OFAC API (direct)"
+
+regulations:
+  - name: "OFAC Regulations (U.S.)"
+    impact: >
+      Strict liability for dealing with sanctioned parties. Requires real-time
+      screening with documented hit-disposition. Screening must continue on
+      an ongoing basis, not only at onboarding.
+  - name: "FATF Recommendation 12 (PEPs)"
+    impact: >
+      Requires enhanced due diligence and senior-management approval for
+      PEP relationships. Drives PEP-screening gates and explicit EDD
+      workflow for PEP hits.
+  - name: "Joint MLA (Mutual Legal Assistance) Practices"
+    impact: >
+      Information-sharing requirements when investigations span jurisdictions.
+      Drives retention and structured storage of DD evidence.
+
+kpis:
+  - "Screening false-positive rate"
+  - "Average hit-disposition cycle time"
+  - "Sanctions hit detection accuracy (true-positive rate)"
+  - "Analyst productivity (cases disposed per day)"
+
+common_patterns:
+  - name: "Tiered Match Confidence with Analyst Review Threshold"
+    description: >
+      Every screening hit gets a match-confidence score. Below a threshold,
+      auto-dispose as no-match with sampling for quality. Above the
+      threshold, route to analyst. Tune thresholds via back-testing against
+      known SARs and regulator findings.
+    when_to_apply: "Any high-volume screening workflow."
+    anti_patterns:
+      - "All hits reviewed manually (unscalable)"
+      - "Thresholds tuned once and never re-evaluated"
+      - "Confidence scores ignored in favor of gut judgment"
+  - name: "Structured Disposition Rationale"
+    description: >
+      Require structured disposition data (category + narrative) rather
+      than free text. Makes analyst decisions auditable and measurable.
+    when_to_apply: "Always for regulated screening."
+    anti_patterns:
+      - "Free-text-only rationale ('looks fine to me')"
+      - "Boolean resolution without context"
+
+anti_patterns:
+  - "Screening run once at onboarding, never again"
+  - "Fuzzy matching applied without calibration to the target population"
+  - "Adverse media summarized by LLM without source citations for auditor review"
+  - "Sanctions-hit evidence stored outside the case's durable event log"
