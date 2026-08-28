@@ -1,0 +1,59 @@
+rules:
+  - id: aah.logging.auth-without-log
+    patterns:
+      - pattern: |
+          def login(...):
+              ...
+      - pattern-not: |
+          def login(...):
+              ...
+              logger.$METHOD(...)
+              ...
+    message: "Authentication function without logging -- audit trail gap"
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe:
+        - "CWE-778: Insufficient Logging"
+      category: security
+      owasp:
+        - A09:2021
+
+  - id: aah.logging.data-delete-without-log
+    patterns:
+      - pattern: |
+          $MODEL.objects.delete(...)
+      - pattern-not-inside: |
+          ...
+          logger.$METHOD(...)
+          ...
+          $MODEL.objects.delete(...)
+    message: "Data deletion without preceding log statement -- audit trail gap"
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe:
+        - "CWE-778: Insufficient Logging"
+      category: security
+
+  - id: aah.logging.permission-change-without-log
+    patterns:
+      - pattern: |
+          $USER.$FIELD = $VALUE
+          ...
+          $USER.save(...)
+      - metavariable-regex:
+          metavariable: $FIELD
+          regex: "(is_staff|is_superuser|is_admin|role|permissions)"
+      - pattern-not-inside: |
+          ...
+          logger.$METHOD(...)
+          ...
+          $USER.$FIELD = $VALUE
+    message: "Permission/role change without preceding log statement -- audit trail gap"
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe:
+        - "CWE-778: Insufficient Logging"
+      category: security

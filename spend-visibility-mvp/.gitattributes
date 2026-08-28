@@ -1,0 +1,10 @@
+# Force LF line endings for all text files
+* text=auto eol=lf
+
+# Codemap database — regenerable binary, auto-resolve conflicts by keeping current branch
+.aah/codebase-intel/codemap.db merge=ours binary
+
+# AAH runtime state files — derived/rebuilt after every merge, always take ours
+.aah/feature-list.json merge=ours
+.aah/claude-progress.json merge=ours
+.aah/audit/token-usage.json merge=ours

@@ -1,0 +1,22 @@
+raw_statement: >-
+  Build an MVP for Kroger sourcing category recommendations across three workloads:
+  a Next.js spend visibility dashboard and chat UI, a FastAPI backend, and a
+  Python LangGraph recommendation agent. The attached architecture includes PING
+  SAML/OIDC authentication, HTTPS ingress, content safety, observability, Redis,
+  cloud data integrations, and AKS deployment. Dev, stage, and prod endpoints may
+  remain placeholders for now.
+target_areas:
+  - frontend
+  - backend
+  - agentic-ai
+  - authentication
+  - data
+  - integrations
+  - deployment
+  - observability
+constraints:
+  - MVP must remain locally reproducible.
+  - Authentication endpoints may be placeholders for dev, stage, and prod.
+  - Three workloads remain separate deployment units.
+  - No local Docker runtime is available; use deterministic fallback validation.
+  - Architecture security controls must be represented in downstream design.

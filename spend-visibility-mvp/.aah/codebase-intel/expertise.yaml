@@ -1,0 +1,11 @@
+version: 1
+project_id: "spend-visibility-mvp"
+last_updated: "2026-08-26T08:24:03Z"
+last_updated_after_feature: null
+tech_patterns: []
+integrations: []
+project_knowledge: []
+consumption_views:
+  quick_context: ""
+  style_guide: ""
+  known_concerns: ""

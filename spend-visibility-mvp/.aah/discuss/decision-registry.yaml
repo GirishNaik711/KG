@@ -1,0 +1,256 @@
+schema_version: '1.0'
+project: spend-visibility-mvp
+complexity: mvp
+archetype: ai-applications
+domain_ids: []
+archetypes: []
+started_at: '2026-08-27'
+pre_resolved:
+- slug_id: runtime-stack
+  value: FastAPI backend, Next.js frontend, Python LangGraph agent as three separate
+    workloads
+  source: codebase
+  locked: true
+  activates: []
+  notes: 'source-detail: backend/app.py; frontend/src/app/page.tsx; agent/service.py
+    · Existing implementation and attached architecture establish three workloads.'
+- slug_id: frontend-auth-boundary
+  value: Auth.js OIDC provider with PING issuer placeholders; gateway/IAP enforcement
+    deferred
+  source: user
+  locked: true
+  activates: []
+  notes: 'source-detail: .env.example and frontend auth scaffold · MVP scaffold; dev,
+    stage, and prod endpoints remain placeholders.'
+decisions:
+- slug_id: cloud-vs-local
+  area: Architecture
+  question: Where will this system run?
+  options_presented:
+  - cloud
+  - local
+  options_eliminated: []
+  response: cloud
+  response_type: single-select
+  source: user
+  revised_from: []
+  notes: Architecture targets AKS; local startup remains supported.
+  activates: []
+- slug_id: data-storage-present
+  area: Data & state architecture
+  question: Does this system persist data?
+  options_presented:
+  - true
+  - false
+  options_eliminated: []
+  response: true
+  response_type: single-select
+  source: user
+  revised_from: []
+  notes: Synthetic CSV, Redis cache, and cloud data integration seams are in scope.
+  activates: []
+- slug_id: custom-ui-required
+  area: UI / UX
+  question: Does this system need a custom user interface?
+  options_presented:
+  - true
+  - false
+  options_eliminated: []
+  response: true
+  response_type: single-select
+  source: user
+  revised_from: []
+  notes: Next.js spend dashboard and chat are required.
+  activates:
+  - ACT-UX
+- slug_id: compliance-regimes
+  area: Security, privacy & compliance
+  question: Which compliance regimes apply?
+  options_presented:
+  - hipaa
+  - soc2
+  - gdpr
+  - pci-dss
+  - bsa-aml
+  - on-prem
+  - air-gapped
+  - sovereign
+  - none
+  options_eliminated: []
+  response:
+  - soc2
+  - gdpr
+  - hipaa
+  - pci-dss
+  response_type: multi-select
+  source: user
+  revised_from: []
+  notes: Captured from Discuss prompt; scope remains broad and requires later confirmation.
+  activates: []
+- slug_id: docker-installed
+  area: Architecture
+  question: Is Docker or a compatible container runtime available locally?
+  options_presented:
+  - true
+  - false
+  options_eliminated: []
+  response: false
+  response_type: single-select
+  source: user
+  revised_from: []
+  notes: Local validation should use the deterministic non-Docker fallback.
+  activates: []
+- slug_id: workload-boundaries
+  area: Architecture & technical foundation
+  question: What are the three workload responsibilities?
+  options_presented:
+  - frontend-ui
+  - fastapi-backend
+  - langgraph-agent
+  options_eliminated: []
+  response:
+  - frontend-ui
+  - fastapi-backend
+  - langgraph-agent
+  response_type: multi-select
+  source: user
+  revised_from: []
+  notes: Explicitly captured from the attached architecture diagram.
+  activates: []
+- slug_id: backend-contract
+  area: Integration & external interfaces
+  question: How do frontend and agent requests cross the backend boundary?
+  options_presented:
+  - rest-json
+  - ag-ui-sse
+  - both
+  options_eliminated: []
+  response: both
+  response_type: single-select
+  source: user
+  revised_from: []
+  notes: REST JSON APIs serve data; chat supports streaming-compatible agent events.
+  activates: []
+- slug_id: agent-governance
+  area: Agentic AI development
+  question: What controls apply to the recommendation agent?
+  options_presented:
+  - sanitize-input
+  - content-safety
+  - observability
+  - all
+  options_eliminated: []
+  response: all
+  response_type: single-select
+  source: user
+  revised_from: []
+  notes: Architecture includes sanitize/query, Azure AI Content Safety, and AI observability.
+  activates: []
+- slug_id: deployment-observability
+  area: Deployment, Ops & observability
+  question: What operational signals must be captured?
+  options_presented:
+  - access-logs
+  - api-metrics
+  - runtime-errors
+  - waf-events
+  - all
+  options_eliminated: []
+  response: all
+  response_type: single-select
+  source: user
+  revised_from: []
+  notes: Architecture calls for central logging, Dynatrace, API metrics, WAF events,
+    and runtime errors.
+  activates: []
+- slug_id: cloud-provider
+  area: Architecture & technical foundation
+  question: Which cloud provider and target platform are in scope?
+  options_presented:
+  - gcp-aks-target
+  - aws
+  - azure
+  - other
+  options_eliminated: []
+  response: gcp-aks-target
+  response_type: single-select
+  source: user
+  revised_from: []
+  notes: The attached architecture labels AKS in us-east4; provider/platform details
+    remain subject to deployment confirmation.
+  activates: []
+- slug_id: development-methodology
+  area: Architecture & technical foundation
+  question: What development methodology should guide the MVP?
+  options_presented:
+  - incremental-mvp
+  - full-production
+  - prototype-only
+  options_eliminated: []
+  response: incremental-mvp
+  response_type: single-select
+  source: user
+  revised_from: []
+  notes: User requested an MVP with development placeholders and local reproducibility.
+  activates: []
+deferred_ideas:
+- 'auth-endpoints: Replace PING dev/stage/prod issuer, client, redirect, and gateway
+  enforcement placeholders when identity platform details are available.'
+- 'deployment-target: Confirm AKS versus alternate managed hosting and finalize ingress/WAF/IAP
+  ownership before production deployment.'
+- 'compliance-scope: Reconcile broad SOC2/GDPR/HIPAA/PCI-DSS selection into the actual
+  MVP compliance boundary.'
+constraint_audit:
+  passed: true
+  ran_at: '2026-08-27'
+  checks:
+    A_mandatory_coverage:
+      result: pass
+      detail: clean
+    B_forbidden_options:
+      result: pass
+      detail: clean
+    C_whitelist:
+      result: pass
+      detail: clean
+    D_service_scope:
+      result: pass
+      detail: clean
+    E_mandated_options:
+      result: pass
+      detail: clean
+    F_provenance:
+      result: pass
+      detail: clean
+  violations: []
+  flags: []
+  warnings: []
+active_references:
+  computed_at: '2026-08-27'
+  guidance_references:
+  - source: _resources/_references/discuss/compliance/hipaa.yaml
+    kind: file
+    exists: true
+    activated_by:
+    - slug_id: compliance-regimes
+      value: hipaa
+  - source: _resources/_references/discuss/compliance/soc2.yaml
+    kind: file
+    exists: true
+    activated_by:
+    - slug_id: compliance-regimes
+      value: soc2
+  - source: _resources/_references/discuss/compliance/gdpr.yaml
+    kind: file
+    exists: true
+    activated_by:
+    - slug_id: compliance-regimes
+      value: gdpr
+  - source: _resources/_references/discuss/compliance/pci-dss.yaml
+    kind: file
+    exists: true
+    activated_by:
+    - slug_id: compliance-regimes
+      value: pci-dss
+  domain_brief_paths: []
+  archetype_playbook_paths: []

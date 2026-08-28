@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/ravdhar/modelcontextprotocol/spend-visibility-mvp/frontend/node_modules/next/src/server/route-modules/app-page/vendored/rsc/react-jsx-dev-runtime.ts"],"sourcesContent":["module.exports = (\n  require('../../module.compiled') as typeof import('../../module.compiled')\n).vendored['react-rsc']!.ReactJsxDevRuntime\n"],"names":["module","exports","require","vendored","ReactJsxDevRuntime"],"mappings":"AAAAA,OAAOC,OAAO,GACZC,QAAQ,4HACRC,QAAQ,CAAC,YAAY,CAAEC,kBAAkB","ignoreList":[0]}},
+    {"offset": {"line": 9, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/ravdhar/modelcontextprotocol/spend-visibility-mvp/frontend/src/app/layout.tsx"],"sourcesContent":["import type { Metadata } from \"next\";\r\nimport \"./globals.css\";\r\n\r\nexport const metadata: Metadata = { title: \"Spend Visibility\", description: \"GNFR spend intelligence\" };\r\n\r\nexport default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {\r\n  return <html lang=\"en\"><body>{children}</body></html>;\r\n}"],"names":["metadata","title","description","RootLayout","children","lang"],"mappings":";;;;;;;;;AAGO,MAAMA,WAAqB;IAAEC,OAAO;IAAoBC,aAAa;AAA0B;AAEvF,SAASC,WAAW,EAAEC,QAAQ,EAA2C;IACtF,qBAAO,8OAAC;QAAKC,MAAK;kBAAK,cAAA,8OAAC;sBAAMD;;;;;;;;;;;AAChC"}}]
+}

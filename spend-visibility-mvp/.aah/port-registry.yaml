@@ -1,0 +1,24 @@
+schema_version: '2.0'
+initialized_at: '2026-08-26T08:34:12Z'
+compiled_at: null
+source_catalog: _resources/_references/_ports/_registry.yaml
+spine_order:
+- init-project
+- discuss
+- architecture
+- plan
+- build
+- fix
+- deploy
+node_anchors:
+  init-project: []
+  discuss: []
+  architecture:
+  - name: post-module-map
+    description: Immediately after module-map.yaml is written and confirmed by the
+      user, and BEFORE any architecture-doc generation or the review board runs.
+  plan: []
+  build: []
+  fix: []
+  deploy: []
+activities: []

@@ -1,0 +1,52 @@
+rules:
+  - id: aah.injection.sqlite3-fstring-execute
+    patterns:
+      - pattern: $CONN.execute(f"...")
+    message: "SQL query built with f-string — vulnerable to SQL injection (use parameterized queries)"
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe:
+        - "CWE-89: Improper Neutralization of Special Elements used in an SQL Command"
+      category: security
+      owasp:
+        - A03:2021
+
+  - id: aah.injection.sqlite3-format-execute
+    patterns:
+      - pattern: $CONN.execute("...".format(...))
+    message: "SQL query built with .format() — vulnerable to SQL injection (use parameterized queries)"
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe:
+        - "CWE-89: Improper Neutralization of Special Elements used in an SQL Command"
+      category: security
+      owasp:
+        - A03:2021
+
+  - id: aah.injection.sqlite3-percent-execute
+    patterns:
+      - pattern: $CONN.execute("..." % ...)
+    message: "SQL query built with % formatting — vulnerable to SQL injection (use parameterized queries)"
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe:
+        - "CWE-89: Improper Neutralization of Special Elements used in an SQL Command"
+      category: security
+      owasp:
+        - A03:2021
+
+  - id: aah.injection.sqlite3-concat-execute
+    patterns:
+      - pattern: $CONN.execute($X + ...)
+    message: "SQL query built with string concatenation — vulnerable to SQL injection (use parameterized queries)"
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe:
+        - "CWE-89: Improper Neutralization of Special Elements used in an SQL Command"
+      category: security
+      owasp:
+        - A03:2021

@@ -1,0 +1,64 @@
+rules:
+  - id: aah.authz.missing-permission-check
+    patterns:
+      - pattern: |
+          def $FUNC(...):
+              ...
+              $MODEL.objects.filter(...)
+              ...
+      - pattern-not: |
+          def $FUNC(...):
+              ...
+              check_permission(...)
+              ...
+    message: "Database query without permission check -- potential unauthorized data access"
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe:
+        - "CWE-862: Missing Authorization"
+      category: security
+      technology:
+        - django
+
+  - id: aah.authz.missing-login-required
+    patterns:
+      - pattern: |
+          def $VIEW(request, ...):
+              ...
+      - pattern-not: |
+          @login_required
+          def $VIEW(request, ...):
+              ...
+      - pattern-not: |
+          @permission_required(...)
+          def $VIEW(request, ...):
+              ...
+      - metavariable-regex:
+          metavariable: $VIEW
+          regex: "^(?!_).*$"
+    message: "View function without @login_required or @permission_required decorator"
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe:
+        - "CWE-306: Missing Authentication for Critical Function"
+      category: security
+      technology:
+        - django
+
+  - id: aah.authz.direct-object-reference
+    patterns:
+      - pattern: |
+          $OBJ = $MODEL.objects.get(id=request.$METHOD.get(...))
+      - pattern-not-inside: |
+          ...
+          if $OBJ.owner == request.user:
+              ...
+    message: "Direct object reference without ownership check -- potential IDOR vulnerability"
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe:
+        - "CWE-639: Authorization Bypass Through User-Controlled Key"
+      category: security

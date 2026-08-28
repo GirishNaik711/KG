@@ -1,0 +1,17 @@
+decisions:
+  - id: runtime-stack
+    status: accepted
+    decision: FastAPI backend, Next.js frontend, and a Python agent service run as separate workloads locally and in containers.
+    rationale: Matches the attached three-workload architecture while keeping local development reproducible.
+  - id: data-foundation
+    status: provisional
+    decision: Use a repository-backed sample data adapter for the MVP; Oracle AP, Coupa, EAA, and Databricks MCP remain environment-driven integration seams.
+    rationale: The source object maps and credentials are not yet available.
+  - id: cloud-target
+    status: provisional
+    decision: Target AKS in us-east4 as shown in the architecture, with cloud services integrated through configuration rather than required for local startup.
+    rationale: Enables local functional validation before cloud provisioning decisions are finalized.
+  - id: taxonomy
+    status: open
+    decision: Default spend taxonomy is not finalized.
+    rationale: The requirements explicitly leave Coupa hierarchy versus business taxonomy undecided.

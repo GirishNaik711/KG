@@ -1,0 +1,25 @@
+project_name: spend-visibility-mvp
+project_type: greenfield
+current_phase: discuss
+complexity_tier: null
+completed_artifacts: []
+stack_choices:
+  primary: python
+features:
+  runtime_profile_v1: report_only
+  runtime_cloud_probes_v1: false
+  semantic_smoke_v2: false
+dag_state: null
+current_iteration: 1
+branching_config:
+  main_branch: main
+  develop_branch: develop
+  integration_prefix: integration/wave-
+industry_domain_path: null
+last_session_summary: null
+execution_mode: aah_root
+delegated_to: null
+delegation_timestamp: null
+synthesis_mode: null
+created_at: '2026-08-26T08:24:03.529290+00:00'
+updated_at: '2026-08-27T09:16:38.029320+00:00'

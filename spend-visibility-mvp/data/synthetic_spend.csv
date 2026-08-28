@@ -1,0 +1,11 @@
+invoice_id,supplier,category,location,division,amount,currency,source,managed,contract_id,po_id,invoice_date,quality_flags
+INV-1001,Northstar Packaging,Packaging,Cincinnati,Manufacturing,184200,USD,Oracle AP,true,CTR-2001,PO-7001,2026-07-02,
+INV-1002,Brightline Logistics,Logistics,Atlanta,Distribution,92750,USD,Coupa,false,, ,2026-07-08,missing_po
+INV-1003,Summit Facilities,Facilities,Dallas,Corporate,61800,USD,Oracle AP,true,CTR-2003,PO-7003,2026-07-12,
+INV-1004,Northstar Packaging,Packaging,Atlanta,Distribution,45200,USD,EAA,true,CTR-2001,PO-7004,2026-07-15,
+INV-1005,Harbor IT Services,Technology,Cincinnati,Manufacturing,138500,USD,Coupa,true,CTR-2005,PO-7005,2026-07-19,
+INV-1006,Greenline Travel,Travel,Dallas,Corporate,47600,USD,Oracle AP,false,,PO-7006,2026-07-22,missing_contract
+INV-1007,Brightline Logistics,Logistics,Cincinnati,Manufacturing,113400,USD,EAA,false,,PO-7007,2026-07-25,missing_contract
+INV-1008,Atlas Safety Supply,Safety,Atlanta,Distribution,72900,USD,Oracle AP,true,CTR-2008,PO-7008,2026-07-27,
+INV-1009,Summit Facilities,Facilities,Dallas,Corporate,55900,USD,Coupa,true,CTR-2003,PO-7009,2026-07-29,
+INV-1010,Harbor IT Services,Technology,Cincinnati,Manufacturing,84500,USD,Oracle AP,true,CTR-2005,PO-7010,2026-07-31,

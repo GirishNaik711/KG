@@ -1,0 +1,16 @@
+services:
+  backend:
+    build: .
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+  agent:
+    build: .
+    env_file: .env
+    command: ["python", "-c", "from agent.service import recommendation_graph; print(recommendation_graph.invoke({'request': 'health'}))"]
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
