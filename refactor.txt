@@ -1,0 +1,18 @@
+Refactor Candidates
+High priority:
+app.py: too many responsibilities in one file. Split API routes, spend aggregation, filtering, governance, and chat into separate modules. Replace the mutable global SAMPLE_SPEND with a repository/service abstraction.
+page.tsx: contains data fetching, filtering, metrics, table rendering, detail drawer, and agent chat in one component. Split into components such as Metrics, Filters, SpendTable, DetailDrawer, and AgentPanel.
+data.py: add CSV validation, clearer parsing helpers, and a data-source interface.
+models.py: add response models for suppliers, opportunities, chart data, summaries, and governance responses instead of returning untyped dictionaries.
+Medium priority:
+service.py: the request is currently accepted but not used by the recommendation logic. Extract recommendation logic from the LangGraph wiring and make the response data-driven.
+env_check.py: centralize configuration loading and expose a typed settings object.
+telemetry.py: separate Dynatrace and LangSmith setup and avoid reading environment variables directly throughout the module.
+test_smoke.py: split the large integration test into focused tests for filtering, summary, ingest, governance, and chat.
+globals.css: likely worth splitting or organizing into layout, data-table, drawer, and agent-panel sections if it is becoming difficult to maintain.
+Usually leave unchanged:
+package-lock.json: generated dependency lockfile.
+synthetic_spend.csv: fixture data, unless the data contract changes.
+.aah artifacts: framework metadata and security rules; update only through the relevant AAH workflow.
+Dockerfile and docker-compose.yml: refactor only if deployment or service boundaries change.
+.env.example: update when new configuration is introduced, but do not refactor casually

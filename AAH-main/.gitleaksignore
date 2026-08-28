@@ -1,3 +1,0 @@
-# Scan result files contain findings about intentional secrets in test projects
-# NOTE: .gitleaksignore uses fingerprints (finding hashes), not file paths.
-# Path-based exclusions are in .gitleaks.toml [allowlist].
